@@ -2,12 +2,21 @@ SCIENTIFIC METHOD!!!
 
 Models to try / Tested? / Results
 
-Preprocessing:
-1: FFT over entire 10 min sample, then get rear/mag /power
-2: linearity bad. Reduce features (pca, smoothing, manual decimation) 
+A. Preprocessing (simple):
+1: FFT over entire 10 min sample, then get rear/mag /power - MM
+2: linearity bad. Reduce features (pca, smoothing, manual decimation) -MM
+3. Use pre-existing naive feature vectorizer NFV- MM
+AA. (more advanced)
+1. Hilbert transform on the data before FFT - MM
+2. Frequency correlation (to be determined method) - MM
+
+B. Non-NN Models:
+1: SVN on NFV vectors - MM
 
 
-1: take FFT, concat all the electrodes, feed into MLP (sigmoid). Dense 3 layer, 1-hot output. 
-option 2: same, but with convo, max pooling instead of dimensionality reduction
-option 3: noob feature vector maker (1600 per slice). feed into MLP as above.
-option 4: NFV and use deep belief network (needs extensions)
+
+C. Neural networks
+1: take FFT, concat all the electrodes, feed into MLP (sigmoid). Dense 3 layer, 1-hot output. - AL
+2: same as C.1, but with convo, max pooling instead of dimensionality reduction - AL
+3: naive feature vector maker (1600 per slice). feed into MLP as above. -AL
+4: NFV and use deep belief network (needs extensions) - AL
