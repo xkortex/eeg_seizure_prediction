@@ -1,0 +1,2 @@
+Mike: 
+MSI with 8-thread intel i7-4700MQ CPU @ 2.40GHz and GeForce GTX 765M 

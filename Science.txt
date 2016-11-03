@@ -20,3 +20,7 @@ C. Neural networks
 2: same as C.1, but with convo, max pooling instead of dimensionality reduction - AL
 3: naive feature vector maker (1600 per slice). feed into MLP as above. -AL
 4: NFV and use deep belief network (needs extensions) - AL
+
+CC. Moar Neural Networks (eventually)
+1: RNN on chunked FFTs
+2: Convo over timeseries/electrode dimension
