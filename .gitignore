@@ -1,3 +1,7 @@
+.ipynb_checkpoints/*
+metadata/*
+data/*
 .pyc
 .mat
 .npy
+
