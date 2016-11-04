@@ -24,3 +24,10 @@ C. Neural networks
 CC. Moar Neural Networks (eventually)
 1: RNN on chunked FFTs
 2: Convo over timeseries/electrode dimension
+
+NOTE: Set up the output layer with a 2-vector, 
+(1,0) = predicts no seizure
+(0,1) = predicts a seizure
+
+It is trivial to combine to a single value with Bayes' theorem, but this allows for much finer tuned control over False Positive vs False Negative errors. 
+The outputs are more diagnostic, like while (0.9, 0.2) is very likely not a seizure, (.5, .1) paints a different picture than (.9, .5). This can tell us that the network might be favorite one subnet over another. Just a trick the pros use a lot. 
