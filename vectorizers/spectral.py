@@ -2,7 +2,7 @@ import numpy as np
 from scipy import fftpack, signal
 
 
-def vectorize_fft(path, ndim=800,  # number of vector dimensions to output
+def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
                   cutoff=40,  # hard cutoff frequency
                   fs=400,  # sample frequency of input signal
                   takeLog=True,  # take log of freq spectrum
@@ -10,7 +10,6 @@ def vectorize_fft(path, ndim=800,  # number of vector dimensions to output
                   stdChan=False,  # take stdDev across all channels - VERY INTERESTING
                   sepComplex=False,  # prolly don't need this
                   hilbertize=False):  # don't need this right now
-    rawdata = matlabtools.get_matlab_eeg_data(path)['data']
     spectrum = fftpack.fft(rawdata, axis=0)
     nsamp0 = rawdata.shape[0]
     t = np.linspace(0, fs, nsamp0)
@@ -37,13 +36,12 @@ def vectorize_fft(path, ndim=800,  # number of vector dimensions to output
     return rs_spectrum
 
 
-def spectrogram(path, nchunk=1024,
+def spectrogram(rawdata, nchunk=1024,
                 windowStep=4,  # subdivide the chunk size in order to get a rolling window
                 absLog=False,
                 hardCutoff=100,
                 fs=400
                 ):
-    rawdata = matlabtools.get_matlab_eeg_data(path)['data']
     nsamp0 = rawdata.shape[0]
     spec_ary = []
     cutIndex = hardCutoff * nchunk / fs

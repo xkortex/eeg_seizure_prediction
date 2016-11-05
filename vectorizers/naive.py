@@ -38,7 +38,7 @@ def calculate_features(file_name, verbose=False,
                        ravelize=True
                        ):
     """
-    :param file_name:
+    :param file_name:[:10]
     :param verbose:
     :param dropoutThresh: % of data which must be non-zero to pass
     :param ravelize:  return each vector as a 1D object, rather than sep by channels
