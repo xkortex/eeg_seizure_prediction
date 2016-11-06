@@ -12,12 +12,14 @@ It uses scipy wavfile for WAV output. The soundfile library is better
 and allows compressed lossless FLAC, but it's not available in Kaggle
 Kernels, so try it at home to save ~50% file size.
 """
-
+from __future__ import print_function, division
 import os
 import numpy as np
 from scipy.io import loadmat
 import glob
 from sklearn.preprocessing import MinMaxScaler
+
+from ..dio import dataio
 
 try:
     # Allows other file formats, such as FLAC.
@@ -36,7 +38,7 @@ except ImportError:
 def convert(mat):
     # structure:
     # mat: dict
-    # mat['dataStruct']: ndarray (1, 1) of type dtype([('data', 'O'),
+    # mat['dataStruct']: ndarray (1, 1) of type dtype(a[('data', 'O'),
     # ('iEEGsamplingRate', 'O'), ('nSamplesSegment', 'O'),
     # ('channelIndices', 'O'), ('sequence', 'O')])
     #
@@ -44,13 +46,21 @@ def convert(mat):
     ndata = {n: mat['dataStruct'][n][0, 0] for n in names}
     return ndata
 
-def auralize(input_file, sample_rate=44100):
+def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75):
     prefix, ext = os.path.basename(input_file).split('.')
     data = convert(loadmat(input_file))['data']
+    vc = dataio.validcount(data)
+    if vc < thresh:
+        print('Dropout: {} - {}'.format(vc, input_file))
+        return 1
     channel_count = data.shape[1]
     # scale to [-1, 1], put all channels after each other
     y = np.vstack([MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, i:i+1]) for i in range(channel_count)])
-    save_audio('%s_%d.%s' % (prefix, sample_rate, 'wav'), y, sample_rate)
+    outfile = '{}_{}.{}'.format(prefix, sample_rate, 'wav')
+    if outpath is not None:
+        outfile = '{}/{}'.format(outpath, outfile)
+    save_audio(outfile, y, sample_rate)
+    return 0
 
 
 if __name__ == '__main__':

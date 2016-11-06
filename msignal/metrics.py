@@ -6,7 +6,11 @@ https://www.quantopian.com/posts/some-code-from-ernie-chans-new-book-implemented
 
 import numpy as np
 
+def rms(a, axis=None):
+    return np.sqrt(np.mean(a**2, axis=axis))
+
 def hurst(p):
+    """Computes the Hurst exponent, a metric of periodicity"""
     tau = []; lagvec = []
     #  Step through the different lags
     for lag in range(2,20):
@@ -23,6 +27,23 @@ def hurst(p):
     # plot lag vs variance
     #py.plot(lagvec,tau,'o'); show()
     return hurst
+
+
+def chanstd(data, mode='std'):
+    """
+    Computes the inter-channel stddev over time, then computes the StdDev/RMS (I think stdev shows better effect
+    :param data: array-like, 1st dim is time, 2nd dim is channels
+    :param mode: {'std', 'rms'} Summary mode
+    :return:
+    """
+    chanwise = np.std(data, axis=1)
+    if mode == 'std':
+        result = np.std(chanwise)
+    elif mode == 'rms':
+        result = rms(chanwise)
+    else:
+        raise ValueError("Invalid mode: {}".format(mode))
+    return result
 
 if __name__=="__main__":
     #  Different types of time series for testing

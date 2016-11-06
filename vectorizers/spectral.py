@@ -1,5 +1,6 @@
 import numpy as np
 from scipy import fftpack, signal
+import matplotlib.pyplot as plt
 
 
 def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
@@ -40,15 +41,32 @@ def spectrogram(rawdata, nchunk=1024,
                 windowStep=4,  # subdivide the chunk size in order to get a rolling window
                 absLog=False,
                 hardCutoff=100,
-                fs=400
+                fs=400,
+                window='tukey',
+                alpha=0.1
                 ):
-    nsamp0 = rawdata.shape[0]
+    nsamp0, nchan = rawdata.shape
     spec_ary = []
     cutIndex = hardCutoff * nchunk / fs
 
     step = nchunk // windowStep
+    if window == 'tukey':
+        window_sig = signal.tukey(nchunk, alpha)
+    elif window == 'hann':
+        window_sig = signal.hann(nchunk)
+    else:
+        raise ValueError('Invalid window signal type: {}'.format(window))
+    window_ary = np.array([window_sig,]*nchan).T
+    # window_ary = np.concatenate(, axis=1)
+    # window_sig.reshape((nchunk, 1))
     for i in range(0, nsamp0, step):
-        spectrum = fftpack.fft(rawdata[i:i + nchunk], axis=0)[:cutIndex]
+        block = rawdata[i:i + nchunk]
+        if block.shape[0] != window_ary.shape[0]:
+            window_ary = window_ary[:block.shape[0]] # yes I know this mangles the window, but I don't know how else
+            # to deal with uneven division of samples at the end. Actually seems to cause no issue
+        datachunk = np.prod([block,window_ary], axis=0)
+
+        spectrum = fftpack.fft(datachunk, axis=0)[:cutIndex]
         if spectrum.shape[0] == cutIndex:  # discard data that doesn't fit right because it messes up the array
             spec_ary.append(spectrum)
             #             print(spectrum.shape)
@@ -61,3 +79,8 @@ def spectrogram(rawdata, nchunk=1024,
     return spec_ary
 
 
+def spec_to_fig(spec, filename=None, cutoff=100, length=600):
+    data = np.average(spec[:,:], axis=2).T
+    plt.imshow(data, origin='lower', extent=[0, length, 0, cutoff])
+    if filename is not None:
+        plt.savefig(filename)

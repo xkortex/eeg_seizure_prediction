@@ -1,9 +1,9 @@
 .ipynb_checkpoints/*
 metadata/*
 data/*
-.pyc
-.mat
-.npy
+*.pyc
+*.mat
+*.npy
 
 #jetbrains
-.idea
+*.idea
