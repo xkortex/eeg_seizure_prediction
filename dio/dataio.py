@@ -15,3 +15,6 @@ def get_matlab_eeg_data(path):
     for key in fields.keys():
         outdata.update({key: ds[key][0,0]})
     return outdata
+
+def get_matlab_eeg_data_ary(path):
+    return get_matlab_eeg_data(path)['data']

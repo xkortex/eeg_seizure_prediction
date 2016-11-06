@@ -1,6 +1,8 @@
+import os
 import numpy as np
 from scipy import fftpack, signal
 import matplotlib.pyplot as plt
+from ..dio import dataio
 
 
 def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
@@ -79,8 +81,25 @@ def spectrogram(rawdata, nchunk=1024,
     return spec_ary
 
 
+def path_to_picname(path):
+    dirname = os.path.dirname(path)
+    filename = os.path.basename(path)[:-4]
+    picname = dirname+'/pics/'+filename+'.png'
+    # print( picname)
+    return picname
+
 def spec_to_fig(spec, filename=None, cutoff=100, length=600):
     data = np.average(spec[:,:], axis=2).T
     plt.imshow(data, origin='lower', extent=[0, length, 0, cutoff])
     if filename is not None:
         plt.savefig(filename)
+        plt.close()
+        print(filename)
+
+
+def file_to_fig(path, nchunk=256, windowStep=4):
+    data = dataio.get_matlab_eeg_data_ary(path)
+    spec = spectrogram(data, nchunk=nchunk, windowStep=windowStep, absLog=1, alpha=0.5, window='hann')
+    picname = path_to_picname(path)
+    spec_to_fig(spec, filename=picname)
+
