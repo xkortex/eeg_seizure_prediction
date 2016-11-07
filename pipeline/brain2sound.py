@@ -13,10 +13,10 @@ and allows compressed lossless FLAC, but it's not available in Kaggle
 Kernels, so try it at home to save ~50% file size.
 """
 from __future__ import print_function, division
-import os
+import os, sys
+import tqdm
 import numpy as np
 from scipy.io import loadmat
-import glob
 from sklearn.preprocessing import MinMaxScaler
 
 from ..dio import dataio
@@ -46,12 +46,13 @@ def convert(mat):
     ndata = {n: mat['dataStruct'][n][0, 0] for n in names}
     return ndata
 
-def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75):
+def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75, verbose=False):
     prefix, ext = os.path.basename(input_file).split('.')
     data = convert(loadmat(input_file))['data']
     vc = dataio.validcount(data)
     if vc < thresh:
-        print('Dropout: {} - {}'.format(vc, input_file))
+        if verbose:
+            print('Dropout: {} - {}'.format(vc, input_file))
         return 1
     channel_count = data.shape[1]
     # scale to [-1, 1], put all channels after each other
@@ -61,6 +62,28 @@ def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75):
         outfile = '{}/{}'.format(outpath, outfile)
     save_audio(outfile, y, sample_rate)
     return 0
+
+
+def auto_process(queue, verbose=False):
+    basepath = os.path.dirname(queue[0])
+    soundpath = basepath + '/sound/'
+    if not (os.path.exists(soundpath)):
+        os.mkdir(soundpath)
+        print("Made path: {}".format(soundpath))
+    # for i, path in enumerate(queue):
+    for i in tqdm.tqdm(range(len(queue))):
+        path = queue[i]
+        # if verbose:
+        #     sys.stdout.write('\r{} of {}: {}'.format(i, len(queue), path))
+        #     sys.stdout.flush()
+        try:
+            result = auralize(path, outpath=soundpath, verbose=verbose)
+
+        except Exception as exc:
+            if verbose:
+                print(exc.message)
+    print('\nDone processing')
+
 
 
 if __name__ == '__main__':

@@ -2,6 +2,7 @@ import argparse
 import glob
 
 from pipeline import switchboard
+from tools import menu
 
 
 def set_arg_parser():
@@ -21,6 +22,11 @@ def set_arg_parser():
     parser.add_argument("-M", "--maxbatch", action="store_true",
                         help="Load ALL available files into the queue, up to 99,999,999")
 
+    parser.add_argument("-p", "--pathmenu", action="store_true",
+                        help="select path from menu")
+    parser.add_argument("-P", "--pickpath", type=int, choices=list(range(20)), default=0,
+                        help="Pick target path")
+
 
     ## models
 
@@ -28,6 +34,8 @@ def set_arg_parser():
                         help="Run simple metrics model")
     parser.add_argument("-q", "--showqueue", action="store_true",
                         help="Show queue")
+    parser.add_argument("-BS", "--brainsound", action="store_true",
+                        help="Convert to WAV files")
 
 
     return parser
@@ -37,6 +45,22 @@ if __name__ == '__main__':
     parser = set_arg_parser()
     args = parser.parse_args()
     dataErrors = True if not args.nodataerror else False # invert because this is a default-on state
+
+    paths = {'/media/mike/Elements/data/kaggle/melbourne/train_all/': None,
+             '/media/mike/Elements/data/kaggle/melbourne/train_1/': None,
+             '/media/mike/Elements/data/kaggle/melbourne/train_2/': None,
+             '/media/mike/Elements/data/kaggle/melbourne/train_3/': None,
+             '/home/mike/Downloads/test_new/': None,
+             'X /home/mike/Downloads/test_1_new/': None,
+             'X /home/mike/Downloads/test_2_new/': None,
+             'X /home/mike/Downloads/test_3_new/': None,
+             '/home/mike/Downloads/train_1/': None,
+             '/media/mike/Elements/data/kaggle/melbourne/': None}
+
+    mymenu = menu.MenuPicker(paths)
+    if args.pathmenu:
+        args.infile = mymenu.user_pick_menu()
+    print(args.infile)
 
     if args.infile is None:
         raise ValueError("No input file specified")
@@ -53,6 +77,8 @@ if __name__ == '__main__':
         processname = 'simple_metric'
     elif args.showqueue:
         processname = 'show_queue'
+    elif args.brainsound:
+        processname = 'brainsound'
 
     queue = queue[:args.limit]
 

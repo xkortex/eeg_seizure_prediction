@@ -106,6 +106,11 @@ class CWTlets(object):
         return CWTlets.s_morlet(n, a, 0.)
 
     @staticmethod
+    def igausslet(n, a):
+        # return signal.hilbert(CWTlets.s_morlet(n, a, 0.))
+        return np.imag(signal.hilbert(np.real(CWTlets.gausslet(n, a)))) # barf.
+
+    @staticmethod
     def bouncelet(n, a, z=2.):
         n = float(n)
         a = float(a)
@@ -169,3 +174,7 @@ def acwt(sig, widths):
     cwt_i = signal.cwt(sig, CWTlets.ricker_i, widths)
     a_sig = lazy_icwt(cwt_r, widths) + 1j * lazy_icwt(cwt_i, widths)
     return a_sig #* magical_constant
+
+def wavediff(sig, width):
+    """Wavelet derivative"""
+    pass

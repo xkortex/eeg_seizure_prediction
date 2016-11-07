@@ -9,6 +9,8 @@ A. Preprocessing (simple):
 AA. (more advanced)
 1. Hilbert transform on the data before FFT - MM
 2. Frequency correlation (to be determined method) - MM
+	Created signal-correlation coefficient summary features
+3. Wavelet-based discete bandpass filter bank w/ analytic reconstruction, discrete freq coeffs
 
 B. Non-NN Models:
 1: SVN on NFV vectors - MM

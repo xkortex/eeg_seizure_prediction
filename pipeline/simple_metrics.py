@@ -1,7 +1,7 @@
 from __future__ import print_function, division
 import os, sys
 import numpy as np, pandas as pd
-import argparse
+import tqdm
 import time
 
 from ..dio import dataio
@@ -11,18 +11,22 @@ from ..msignal import metrics
 def auto_process(queue, verbose=True):
     metric_ary = []
     namelist = []
-    for i, path in enumerate(queue):
-        data = dataio.get_matlab_eeg_data_ary(path)
-        hurst = metrics.hurst(data)
-        chanstd = metrics.chanstd(data)
-        ccmean, ccstd = metrics.crosscorr_stat(data)
-        # hurst = 1
-        # chanstd = 1
-        metric_ary.append(np.array([hurst, chanstd, ccmean, ccstd]))
-        namelist.append(os.path.basename(path))
-        if verbose:
-            sys.stdout.write('\r{} of {}'.format(i, len(queue)))
-            sys.stdout.flush()
+    for i in tqdm.tqdm(range(len(queue))):
+        path = queue[i]
+        try:
+            data = dataio.get_matlab_eeg_data_ary(path)
+            hurst = metrics.hurst(data)
+            chanstd = metrics.chanstd(data)
+            ccmean, ccstd = metrics.crosscorr_stat(data)
+            # hurst = 1
+            # chanstd = 1
+            metric_ary.append(np.array([hurst, chanstd, ccmean, ccstd]))
+            namelist.append(os.path.basename(path))
+            if verbose:
+                sys.stdout.write('\r{} of {}'.format(i, len(queue)))
+                sys.stdout.flush()
+        except Exception as exc:
+            print(exc.message)
     print('\nDone processing')
     metric_ary = np.nan_to_num(metric_ary)
     meanval = np.mean(metric_ary, axis=0)
