@@ -1,6 +1,4 @@
-"""Derived from code posted publically by Tom Starke on
-https://www.quantopian.com/posts/some-code-from-ernie-chans-new-book-implemented-in-python
-"""
+"""Mapreduce-like functions for operating on a 16-channel dataframe and returning a scalar"""
 
 # import matplotlib.pyplot as py
 
@@ -10,6 +8,9 @@ def rms(a, axis=None):
     return np.sqrt(np.mean(a**2, axis=axis))
 
 def hurst(p):
+    """Derived from code posted publically by Tom Starke on
+    https://www.quantopian.com/posts/some-code-from-ernie-chans-new-book-implemented-in-python
+    """
     """Computes the Hurst exponent, a metric of periodicity"""
     tau = []; lagvec = []
     #  Step through the different lags
@@ -44,6 +45,34 @@ def chanstd(data, mode='std'):
     else:
         raise ValueError("Invalid mode: {}".format(mode))
     return result
+
+def crosscorr_std(data):
+    """
+    Returns stddev of the cross correlation of the signal
+    :param data:
+    :return: std of 16x16 cross corr matrix
+    """
+    cc = np.corrcoef(data, rowvar=0)
+    return np.std(cc)
+
+def crosscorr_mean(data):
+    """
+    Returns mean of the cross correlation of the signal (scaled by 16x)
+    :param data:
+    :return: mean of 16x16 cross corr matrix (aka sum/16)
+    """
+    cc = np.corrcoef(data, rowvar=0)
+    return np.sum(cc)/16
+
+def crosscorr_stat(data):
+    """
+    Returns statistics on the cross correlation of the signal
+    :param data:
+    :return: (mean, std) of 16x16 cross corr matrix
+    """
+    cc = np.corrcoef(data, rowvar=0)
+    return(np.sum(cc)/16, np.std(cc))
+
 
 if __name__=="__main__":
     #  Different types of time series for testing

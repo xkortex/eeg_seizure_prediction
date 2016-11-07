@@ -18,3 +18,4 @@ def pltcwt(plt, my_cwt, widths, realize=None):
 def plt_easycwt(plt, sig, widths):
     my_cwt = signal.cwt(sig, signal.ricker, widths)
     pltcwt(plt, my_cwt, widths)
+

@@ -2,6 +2,7 @@ import os
 import numpy as np
 from scipy import fftpack, signal
 import matplotlib.pyplot as plt
+import matplotlib
 from ..dio import dataio
 
 
@@ -39,13 +40,14 @@ def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
     return rs_spectrum
 
 
-def spectrogram(rawdata, nchunk=1024,
+def spectrogram(rawdata, nchunk=256,
                 windowStep=4,  # subdivide the chunk size in order to get a rolling window
                 absLog=False,
                 hardCutoff=100,
                 fs=400,
                 window='tukey',
-                alpha=0.1
+                alpha=0.1,
+                mode='abslog'
                 ):
     nsamp0, nchan = rawdata.shape
     spec_ary = []
@@ -73,8 +75,10 @@ def spectrogram(rawdata, nchunk=1024,
             spec_ary.append(spectrum)
             #             print(spectrum.shape)
     spec_ary = np.array(spec_ary)
-    if absLog:
+    if mode=='abslog':
         spec_ary = np.log(np.abs(spec_ary))
+    elif mode=='phase':
+        spec_ary = np.angle(spec_ary)
     else:
         spect_ary = np.abs(spec_ary)
 
@@ -97,9 +101,30 @@ def spec_to_fig(spec, filename=None, cutoff=100, length=600):
         print(filename)
 
 
-def file_to_fig(path, nchunk=256, windowStep=4):
+def file_to_fig(path, nchunk=256, windowStep=4, savefile=False, returnspec=False):
     data = dataio.get_matlab_eeg_data_ary(path)
     spec = spectrogram(data, nchunk=nchunk, windowStep=windowStep, absLog=1, alpha=0.5, window='hann')
-    picname = path_to_picname(path)
+    picname = path_to_picname(path) if savefile else None
     spec_to_fig(spec, filename=picname)
+    if returnspec:
+        return spec
 
+def plt_16x(plt, spec, npow=1):
+    """
+    Plot all 16 channels of the spectrogram
+    :param plt:
+    :param spec:
+    :param npow:
+    :return:
+    """
+    matplotlib.rcParams['figure.figsize'] = (12, 16)
+    fig = plt.figure()
+    nmax = 16
+    if npow != 1:
+        spec = spec**npow
+    for i in range(nmax):
+        fig.add_subplot(nmax // 2, 2, i + 1)
+        plt.imshow(spec[:, :, i].T, extent=[0, 600, 0, 200], origin='lower')
+        ax = plt.gca()
+        ax.get_yaxis().set_visible(False)
+        ax.get_xaxis().set_visible(False)

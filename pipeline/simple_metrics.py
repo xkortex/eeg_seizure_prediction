@@ -15,10 +15,11 @@ def auto_process(queue, verbose=True):
         data = dataio.get_matlab_eeg_data_ary(path)
         hurst = metrics.hurst(data)
         chanstd = metrics.chanstd(data)
+        ccmean, ccstd = metrics.crosscorr_stat(data)
         # hurst = 1
         # chanstd = 1
-        metric_ary.append(np.array([hurst, chanstd]))
-        namelist.append(os.path.basename(path)[:-4])
+        metric_ary.append(np.array([hurst, chanstd, ccmean, ccstd]))
+        namelist.append(os.path.basename(path))
         if verbose:
             sys.stdout.write('\r{} of {}'.format(i, len(queue)))
             sys.stdout.flush()
@@ -27,7 +28,7 @@ def auto_process(queue, verbose=True):
     meanval = np.mean(metric_ary, axis=0)
 
 
-    df = pd.DataFrame(metric_ary, columns=['hurst', 'chanstd'])
+    df = pd.DataFrame(metric_ary, columns=['hurst', 'chanstd', 'ccmean', 'ccstd'])
     df['File'] = pd.Series(namelist)
     guess_h = df['hurst'] - meanval[0] # hurst is below mean for seizure
     guess_s = df['chanstd'] - meanval[1] #chanstd is below mean
