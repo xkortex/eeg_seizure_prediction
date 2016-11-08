@@ -9,10 +9,14 @@ from ..pipeline import brain2sound
 
 def queue_auto_process(queue):
     # for i, path in enumerate(queue):
+    print('Length of queue: {}'.format(len(queue)))
     for i in tqdm(range(len(queue))):
         # sys.stdout.write('\r{} of {}'.format(i, len(queue)))
         # sys.stdout.flush()
-        time.sleep(.001)
+        sys.stdout.write('\r{}'.format(queue[i]))
+        sys.stdout.flush()
+        # time.sleep(.001)
+        # print('\r',queue[i])
     print('\nDone')
     return queue
 

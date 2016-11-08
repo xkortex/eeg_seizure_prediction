@@ -26,7 +26,7 @@ class MenuPicker(object):
     def user_pick_menu(self):
         keystruct = self.show_menu()
         reply = input("Enter menu selection: ")
-        if reply == '' or reply is None:
+        if reply == '' or reply == '0' or reply is None:
             print('Quitting')
             return None
         else:

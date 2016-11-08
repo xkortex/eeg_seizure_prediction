@@ -1,3 +1,5 @@
+from __future__ import print_function, division
+import sys
 import argparse
 import glob
 
@@ -60,10 +62,12 @@ if __name__ == '__main__':
     mymenu = menu.MenuPicker(paths)
     if args.pathmenu:
         args.infile = mymenu.user_pick_menu()
-    print(args.infile)
+    print('Selection: ', args.infile)
 
     if args.infile is None:
-        raise ValueError("No input file specified")
+        # raise ValueError("No input file specified")
+        print("No input file specified")
+        sys.exit(1)
     if args.maxbatch:
         args.limit=99999999 # note: not actually limitless
     if args.diagnostics:

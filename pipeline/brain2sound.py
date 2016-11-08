@@ -46,8 +46,14 @@ def convert(mat):
     ndata = {n: mat['dataStruct'][n][0, 0] for n in names}
     return ndata
 
-def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75, verbose=False):
+
+def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75, overwrite=False, verbose=False):
     prefix, ext = os.path.basename(input_file).split('.')
+    outfile = '{}_{}.{}'.format(prefix, sample_rate, 'wav')
+    if outpath is not None:
+        outfile = '{}/{}'.format(outpath, outfile)
+    if os.path.exists(outfile) and not overwrite:
+        return 1
     data = convert(loadmat(input_file))['data']
     vc = dataio.validcount(data)
     if vc < thresh:
@@ -57,9 +63,7 @@ def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75, verbose=Fa
     channel_count = data.shape[1]
     # scale to [-1, 1], put all channels after each other
     y = np.vstack([MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, i:i+1]) for i in range(channel_count)])
-    outfile = '{}_{}.{}'.format(prefix, sample_rate, 'wav')
-    if outpath is not None:
-        outfile = '{}/{}'.format(outpath, outfile)
+
     save_audio(outfile, y, sample_rate)
     return 0
 
