@@ -1,8 +1,8 @@
 import os
 import numpy as np
 from scipy import fftpack, signal, interpolate
-import matplotlib.pyplot as plt
-import matplotlib
+#import matplotlib.pyplot as plt # I was just using this, not sure why it's breaking now
+#import matplotlib
 from ..dio import dataio
 from ..msignal import auxfilter
 
