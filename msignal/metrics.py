@@ -1,5 +1,5 @@
 """Mapreduce-like functions for operating on a 16-channel dataframe and returning a scalar"""
-
+from __future__ import print_function, division
 # import matplotlib.pyplot as py
 
 import numpy as np
@@ -79,4 +79,4 @@ if __name__=="__main__":
     #p = log10(cumsum(random.randn(50000)+1)+1000) # trending, hurst ~ 1
     #p = log10((random.randn(50000))+1000)   # mean reverting, hurst ~ 0
     p = np.log10(np.cumsum(np.random.randn(50000))+1000) # random walk, hurst ~ 0.5
-    print hurst(p)
+    print(hurst(p))

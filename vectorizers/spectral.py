@@ -39,6 +39,35 @@ def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
     # plt.plot(rs_t, rs_spectrum)
     return rs_spectrum
 
+def ridiculous_log_transform(data, ndim=1024, fs=400, smoothing_cutoff=1, hard_cutoff=100, log_low_cut=-5):
+    """
+    This function returns a distorted version (x-axis log-transformed) of the fourier transform of the signal.
+    My hope is with this approach is that it results in a more normally-distributed looking vector, which should lead
+    to less weirdness in the NNs later on. At least that is my hope. I've been informed by my signals teacher that
+    taking the log of the y of a signal is bad, and warping x is worse! But oh well, we shall see if it works.
+    :param data: input data, [n,t] array-like
+    :param ndim: dimension of output vector
+    :param fs: input data sampling frequency
+    :param smoothing_cutoff: 'Frequency' of smoothing the spectrum
+    :param hard_cutoff: Chop off the frequency spectrum above this frequency
+    :param log_low_cut: Sets how much to include very low frequency components
+    :return:
+    """
+    # FFT and magnitude
+    ftsig = ftpk.fft(data, axis=0)
+    ftsig_a = np.abs(ftsig[:len(ftsig)*hard_cutoff//fs])
+    # Smooth it with low pass and downsample. Low pass may not be necessary since resample does appropriate
+    # pre-filtering
+    ftsig_f = auxfilter.butterfilt(ftsig_a, smoothing_cutoff, fs)
+    ftsig_r = signal.resample(ftsig_f, ndim)
+
+    # Ok, now the weird bit. Take the existing x-domain and create an interpolation image of it
+    t_rs = np.linspace(0.0001, hard_cutoff, ndim)
+    fn_ftsig_rs = interpolate.Akima1DInterpolator(t_rs, ftsig_r)
+    # And now map an exponential domain, thereby creating a higher density of points around the main freq
+    log_ftsig = fn_ftsig_rs(np.exp(np.linspace(log_low_cut, np.log(hard_cutoff), ndim)))
+    return log_ftsig
+
 
 def spectrogram(rawdata, nchunk=256,
                 windowStep=4,  # subdivide the chunk size in order to get a rolling window
