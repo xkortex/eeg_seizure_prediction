@@ -21,7 +21,7 @@ def auto_process(queue, verbose=True):
         except Exception as exc:
             print(exc.message)
     print('\nDone processing')
-    name_ary = pd.DataFrame(name_ary, columns=['path']
+    name_ary = pd.DataFrame(name_ary, columns=['path'])
     filename = 'vec_{}'.format(time.time())
     np.save(filename, vec_ary)
     name_ary.to_csv(filename+'_name.csv')
