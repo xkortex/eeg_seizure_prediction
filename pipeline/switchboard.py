@@ -4,7 +4,7 @@ from tqdm import tqdm
 import time
 
 import simple_metrics
-from ..pipeline import brain2sound
+from ..pipeline import brain2sound, general_vectorize
 
 
 def queue_auto_process(queue):
@@ -25,13 +25,14 @@ def run_a_process(processname, queue):
     if processname == 'simple_metric':
         auto_process = simple_metrics.auto_process
 
-
     elif processname == 'show_queue':
         auto_process = queue_auto_process
 
-
     elif processname == 'brainsound':
         auto_process = brain2sound.auto_process
+
+    elif processname == 'generalvec':
+        auto_process = general_vectorize.auto_process
 
     else:
         print("No valid process selected")

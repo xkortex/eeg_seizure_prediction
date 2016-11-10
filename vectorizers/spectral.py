@@ -1,9 +1,10 @@
 import os
 import numpy as np
-from scipy import fftpack, signal
+from scipy import fftpack, signal, interpolate
 import matplotlib.pyplot as plt
 import matplotlib
 from ..dio import dataio
+from ..msignal import auxfilter
 
 
 def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
@@ -54,7 +55,7 @@ def ridiculous_log_transform(data, ndim=1024, fs=400, smoothing_cutoff=1, hard_c
     :return:
     """
     # FFT and magnitude
-    ftsig = ftpk.fft(data, axis=0)
+    ftsig = fftpack.fft(data, axis=0)
     ftsig_a = np.abs(ftsig[:len(ftsig)*hard_cutoff//fs])
     # Smooth it with low pass and downsample. Low pass may not be necessary since resample does appropriate
     # pre-filtering

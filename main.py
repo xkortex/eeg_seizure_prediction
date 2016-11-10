@@ -38,6 +38,8 @@ def set_arg_parser():
                         help="Show queue")
     parser.add_argument("-BS", "--brainsound", action="store_true",
                         help="Convert to WAV files")
+    parser.add_argument("-G", "--generalvec", action="store_true",
+                        help="General vectorizer")
 
 
     return parser
@@ -83,6 +85,8 @@ if __name__ == '__main__':
         processname = 'show_queue'
     elif args.brainsound:
         processname = 'brainsound'
+    elif args.generalvec:
+        processname = 'generalvec'
 
     queue = queue[:args.limit]
 
