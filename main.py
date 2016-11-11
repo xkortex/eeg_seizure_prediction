@@ -40,6 +40,8 @@ def set_arg_parser():
                         help="Convert to WAV files")
     parser.add_argument("-G", "--generalvec", action="store_true",
                         help="General vectorizer")
+    parser.add_argument("-SE", "--sampen", action="store_true",
+                        help="Sample Entropy vectorizer")
 
 
     return parser
@@ -87,6 +89,8 @@ if __name__ == '__main__':
         processname = 'brainsound'
     elif args.generalvec:
         processname = 'generalvec'
+    elif args.sampen:
+        processname = 'sampen'
 
     queue = queue[:args.limit]
 
