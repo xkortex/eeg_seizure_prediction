@@ -3,27 +3,31 @@ import os, sys
 import numpy as np, pandas as pd
 import tqdm
 import time
+from io import StringIO
 from subprocess import Popen, PIPE
 
 
 from ..dio import dataio
 from ..vectorizers import spectral
 
-def sampen_chan(channeldata):
+def sampen_chan(channeldata, verbose=False):
     spool = []
     for i in range(len(channeldata)):
         spool.append('{}'.format(channeldata[i]))
     stream = '\n'.join(spool)
-    cproc = Popen("/home/mike/src/SampEn/sampen", stdin=PIPE, stdout=PIPE)
+    cproc = Popen("SampEn/sampen13.o", stdin=PIPE, stdout=PIPE)
     out, err = cproc.communicate(stream)
     print(err)
-    return out
+    outdata = pd.read_csv(StringIO(out), header=None).as_matrix()
+    if verbose: print(outdata)
 
-def sampen_eeg(data):
+    return outdata
+
+def sampen_eeg(data, verbose=False):
     sampen = []
     for chan in range(16):
-        out = sampen_chan(data[:,chan])
-        sampen.append(out)
+        outdata = sampen_chan(data[:,chan], verbose=verbose)
+        sampen.append(outdata)
     return sampen
 
 
@@ -34,7 +38,7 @@ def auto_process(queue, verbose=True):
         path = queue[i]
         try:
             data = dataio.get_matlab_eeg_data_ary(path)
-            vec1 = sampen_eeg(data)
+            vec1 = sampen_eeg(data, verbose=verbose)
             vec_ary.append(vec1)
             name_ary.append(path)
         except Exception as exc:
