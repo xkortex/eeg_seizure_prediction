@@ -52,7 +52,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dataErrors = True if not args.nodataerror else False # invert because this is a default-on state
 
-    paths = {'/media/mike/Elements/data/kaggle/melbourne/train_all/': None,
+    paths = {'/home/mike/Downloads/minidata/': None,
+            '/media/mike/Elements/data/kaggle/melbourne/train_all/': None,
              '/media/mike/Elements/data/kaggle/melbourne/train_1/': None,
              '/media/mike/Elements/data/kaggle/melbourne/train_2/': None,
              '/media/mike/Elements/data/kaggle/melbourne/train_3/': None,
