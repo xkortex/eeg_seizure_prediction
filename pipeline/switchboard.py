@@ -7,7 +7,7 @@ import simple_metrics
 from ..pipeline import brain2sound, general_vectorize, sampen
 
 
-def queue_auto_process(queue):
+def queue_auto_process(queue, vector_fn=None):
     # for i, path in enumerate(queue):
     print('Length of queue: {}'.format(len(queue)))
     for i in tqdm(range(len(queue))):
@@ -22,8 +22,13 @@ def queue_auto_process(queue):
 
 
 def run_a_process(processname, queue):
+    vector_fn = None
+    vec_name = 'foo'
+    # todo: homogenize the pipeline process for vectorizing
     if processname == 'simple_metric':
-        auto_process = simple_metrics.auto_process
+        auto_process = general_vectorize.auto_process
+        vector_fn = simple_metrics.vector_metric
+        vec_name = 'simple'
 
     elif processname == 'show_queue':
         auto_process = queue_auto_process
@@ -33,12 +38,17 @@ def run_a_process(processname, queue):
 
     elif processname == 'generalvec':
         auto_process = general_vectorize.auto_process
+        vector_fn = general_vectorize.vector_ridiculog
+        vec_name = 'ridiculog'
 
     elif processname == 'sampen':
-        auto_process = sampen.auto_process
+        auto_process = general_vectorize.auto_process
+        vector_fn = sampen.sampen_eeg
+        vec_name = 'sampen'
+
 
     else:
         print("No valid process selected")
         raise ValueError("No valid process selected")
 
-    results = auto_process(queue)
+    results = auto_process(queue, vector_fn, vec_name)

@@ -32,10 +32,7 @@ def sampen_eeg(data, verbose=False):
         sampen.append(outdata)
     return np.array(sampen)
 
-def dump_data(vec_ary, name_ary, filename):
-    name_ary = pd.DataFrame(name_ary, columns=['path'])
-    np.save(filename, vec_ary)
-    name_ary.to_csv(filename + '_name.csv')
+
 
 
 def auto_process(queue, checkpoint=10, verbose=False):
@@ -52,10 +49,10 @@ def auto_process(queue, checkpoint=10, verbose=False):
         except Exception as exc:
             print(exc.message)
         if i % checkpoint == 0:
-            dump_data(vec_ary, name_ary, filename)
+            dataio.dump_data(vec_ary, name_ary, filename)
 
     print('\nDone processing')
-    dump_data(vec_ary, name_ary, filename)
+    dataio.dump_data(vec_ary, name_ary, filename)
 
 
 def set_arg_parser():

@@ -8,6 +8,14 @@ from ..dio import dataio
 from ..vectorizers import naive
 from ..msignal import metrics
 
+
+def vector_metric(data, verbose=False):
+    hurst = metrics.hurst(data)
+    chanstd = metrics.chanstd(data)
+    ccmean, ccstd = metrics.crosscorr_stat(data)
+
+    return np.array([hurst, chanstd, ccmean, ccstd])
+
 def auto_process(queue, verbose=True):
     metric_ary = []
     namelist = []

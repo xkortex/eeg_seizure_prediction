@@ -53,3 +53,7 @@ def separate_sets(data_vec, label_ary):
 
     return (d0, d1, dt)
 
+def dump_data(vec_ary, name_ary, filename):
+    name_ary = pd.DataFrame(name_ary, columns=['path'])
+    np.save(filename, vec_ary)
+    name_ary.to_csv(filename + '_name.csv')
