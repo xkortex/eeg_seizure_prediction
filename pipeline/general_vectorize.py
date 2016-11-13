@@ -40,8 +40,8 @@ def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, verbose=F
     vec_ary = []
     name_ary = []
     time_start = int(time.time())
-    time_str = time_start[-7:-3] +'_'+ time_start[-3:]
-    filename = 'vec_{}_{}'.format(vec_name, )
+    time_str = str(time_start)[-7:-3] +'_'+ str(time_start)[-3:]
+    filename = 'vec_{}_{}'.format(vec_name, time_str)
     notes = input("Please enter a note: ")
     meta = {'notes': notes, 'basedir': os.path.abspath(queue[0]), 'time_start': time_start, 'length': len(queue)}
 

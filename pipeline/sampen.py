@@ -16,7 +16,7 @@ def sampen_chan(channeldata, verbose=False):
     for i in range(len(channeldata)):
         spool.append('{}'.format(channeldata[i]))
     stream = '\n'.join(spool)
-    cproc = Popen("SampEn/sampen13.o", stdin=PIPE, stdout=PIPE)
+    cproc = Popen("SampEn/sampen13_1k.o", stdin=PIPE, stdout=PIPE)
     out, err = cproc.communicate(stream)
     if err: print(err)
     if verbose: print('OUT: ', out)
