@@ -36,3 +36,20 @@ def reload_with_labels(basename):
     data_vec = data.reshape(data.shape[0],-1)
     assert data_vec.shape[0] == label_ary.shape[0], "Shape mismatch with data and label"
     return (data_vec, label_ary)
+
+
+def separate_sets(data_vec, label_ary):
+    """
+    Separates out numpy-pickled data with corresponding data set.
+    :param data_vec:
+    :param label_ary:
+    :return:
+    """
+    # df = pd.DataFrame(data_vec)
+    # df['label'] = pd.Series(label_ary)
+    d0 = data_vec[np.where(label_ary.ravel() == 0)[0], :]
+    d1 = data_vec[np.where(label_ary.ravel() == 1)[0], :]
+    dt = data_vec[np.where(label_ary.ravel() == -1)[0], :]
+
+    return (d0, d1, dt)
+
