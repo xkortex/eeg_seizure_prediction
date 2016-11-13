@@ -3,6 +3,7 @@ import os
 import numpy as np
 import pandas as pd
 import scipy.io
+import json
 
 
 def validcount(rawdata):
@@ -53,7 +54,10 @@ def separate_sets(data_vec, label_ary):
 
     return (d0, d1, dt)
 
-def dump_data(vec_ary, name_ary, filename):
+def dump_data(vec_ary, name_ary, meta, filename):
     name_ary = pd.DataFrame(name_ary, columns=['path'])
     np.save(filename, vec_ary)
     name_ary.to_csv(filename + '_name.csv')
+    with open(filename + '.json', 'w') as jfile:
+        json.dump(meta, jfile)
+
