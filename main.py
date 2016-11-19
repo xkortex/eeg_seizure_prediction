@@ -42,6 +42,11 @@ def set_arg_parser():
                         help="General vectorizer")
     parser.add_argument("-SE", "--sampen", action="store_true",
                         help="Sample Entropy vectorizer")
+    parser.add_argument("-LF", "--logfourier", action="store_true",
+                        help="Log Fourier (Mel) vectorizer")
+    parser.add_argument("-FTFC", "--ftfc", action="store_true",
+                        help="FFT Time Freq Corr (FTFC) vectorizer")
+
 
 
     return parser
@@ -57,12 +62,15 @@ if __name__ == '__main__':
              '/media/mike/Elements/data/kaggle/melbourne/train_1/': None,
              '/media/mike/Elements/data/kaggle/melbourne/train_2/': None,
              '/media/mike/Elements/data/kaggle/melbourne/train_3/': None,
+             '/run/media/mike/Elements/data/kaggle/melbourne/test_new': None,
              '/home/mike/Downloads/test_new/': None,
              'X /home/mike/Downloads/test_1_new/': None,
              'X /home/mike/Downloads/test_2_new/': None,
              'X /home/mike/Downloads/test_3_new/': None,
-             '/home/mike/Downloads/train_1/': None,
-             '/media/mike/Elements/data/kaggle/melbourne/': None}
+             '/home/mike/data/train/': None,
+             '/media/mike/Elements/data/kaggle/melbourne/': None,
+             '/run/media/mike/Elements/data/kaggle/upenn/clips/Patient_1': None,
+}
 
     mymenu = menu.MenuPicker(paths)
     if args.pathmenu:
@@ -92,7 +100,11 @@ if __name__ == '__main__':
         processname = 'generalvec'
     elif args.sampen:
         processname = 'sampen'
+    elif args.logfourier:
+        processname = 'logfourier'
+    elif args.ftfc:
+        processname = 'ftfc'
 
     queue = queue[:args.limit]
 
-    switchboard.run_a_process(processname, queue)
+    switchboard.run_a_process(processname, queue, verbose=args.verbose)

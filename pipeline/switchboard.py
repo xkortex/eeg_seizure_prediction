@@ -5,6 +5,7 @@ import time
 
 import simple_metrics
 from ..pipeline import brain2sound, general_vectorize, sampen
+from ..vectorizers import kludge_mh
 
 
 def queue_auto_process(queue, vector_fn=None):
@@ -21,7 +22,7 @@ def queue_auto_process(queue, vector_fn=None):
     return queue
 
 
-def run_a_process(processname, queue):
+def run_a_process(processname, queue, verbose=False):
     vector_fn = None
     vec_name = 'foo'
     # todo: homogenize the pipeline process for vectorizing
@@ -46,9 +47,20 @@ def run_a_process(processname, queue):
         vector_fn = sampen.sampen_eeg
         vec_name = 'sampen'
 
+    elif processname == 'logfourier':
+        auto_process = general_vectorize.auto_process
+        vector_fn = general_vectorize.vector_ridiculog
+        vec_name = 'sampen'
+
+    elif processname == 'ftfc':
+        auto_process = general_vectorize.auto_process
+        vector_fn = kludge_mh.vf_fft_timefreqcorr
+        vec_name = 'mh_ftfc'
+
+
 
     else:
         print("No valid process selected")
         raise ValueError("No valid process selected")
 
-    results = auto_process(queue, vector_fn, vec_name)
+    results = auto_process(queue, vector_fn, vec_name, verbose=verbose)
