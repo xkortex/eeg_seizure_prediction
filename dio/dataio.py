@@ -61,3 +61,22 @@ def dump_data(vec_ary, name_ary, meta, filename):
     with open(filename + '.json', 'w') as jfile:
         json.dump(meta, jfile)
 
+
+def subdiv_and_shuffle(data, labels, resample='down', noise=None):
+    d0, d1, dt = separate_sets(data, labels)
+    if resample == 'down':
+        np.random.shuffle(d0)
+        d0 = d0[:len(d1)]
+    elif resample == 'up':
+        ratio = len(d0) / len(d1)
+        mult = int(ratio) + 1
+        d1 = np.concatenate([d1, ] * mult, axis=0)
+
+    new_set = np.concatenate([d0, d1], axis=0)
+    #     print('new set: ', new_set.shape)
+    new_labels = np.concatenate([np.zeros(len(d0)), np.ones(len(d1))], axis=0).reshape(-1, 1)
+    #     print('new labels: ', new_labels.shape)
+    connected_set = np.concatenate([new_set, new_labels], axis=1)
+    np.random.shuffle(connected_set)
+    X, Y = np.array(connected_set[:, :-1]), np.array(connected_set[:, -1:])
+    return X, Y

@@ -158,3 +158,6 @@ def plt_16x(plt, spec, npow=1):
         ax = plt.gca()
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
+
+def vec_downsamp_sequential(data, verbose=False):
+    pass
