@@ -52,8 +52,8 @@ def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, verbose=F
             vec1 = vector_fn(data, verbose=verbose)
             vec_ary.append(vec1)
             name_ary.append(path)
-        except IndexError as exc:
-        # except Exception as exc:
+        # except IndexError as exc:
+        except Exception as exc:
             exc_type, exc_obj, exc_tb = sys.exc_info()
             fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
             # print(exc. exc.message)
