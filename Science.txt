@@ -50,3 +50,8 @@ ________________________________________________________________________________
 dense_5 (Dense)                  (None, 2)             202         lstm_5[0][0]                     
 ====================================================================================================
 Total params: 66778
+
+The autoencoder seems to be doing pretty well on the individual electrode sample set (combined training and test of LF/MFCC, single electrode per sample, downsampled to 256, z-normalized). Make sure to use the appropriate activation function - sigmoid in Keras only handles positive. Since freq data is all positive anyway, it may be better to do a normalization which keeps the vector totally positive. Probably just divide by sigma.
+
+Nope, tanh works a lot better than sigmoid, softplus, or relu
+
