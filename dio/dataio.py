@@ -62,7 +62,7 @@ def dump_data(vec_ary, name_ary, meta, filename):
     with open(filename + '.json', 'w') as jfile:
         json.dump(meta, jfile)
 
-def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True):
+def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True, shuffle=True):
     d0, d1, dt = separate_sets(data, labels)
     if resample == 'down':
         np.random.shuffle(d0)
@@ -78,6 +78,8 @@ def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True):
     print('label shapes: ', L0.shape, L1.shape, len(L0) + len(L1))
     new_labels = np.concatenate([L0, L1], axis=0).reshape(-1, 1)
     #     print('new labels: ', new_labels.shape)
+    if not shuffle:
+        return new_set, new_labels
     assert len(new_set) == len(new_labels), "Something failed, lengths of X and Y are not the same"
     if merge:
         connected_set = np.concatenate([new_set, new_labels], axis=1)
