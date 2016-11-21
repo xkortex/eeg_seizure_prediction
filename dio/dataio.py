@@ -108,3 +108,16 @@ def deinterleave(data, nchan=16):
     :param nchan:
     :return:
     """
+
+
+def respool_electrodes(data, nchan=16):
+    ndata, ndim = data.shape
+    newdata = np.zeros((ndata // nchan, nchan, ndim))
+    for i in range(0, len(data), nchan):
+        for j in range(0, nchan):
+            #             newframe.append(data[j])
+            k = i // nchan
+            newdata[k][j] = data[i + j]
+            #         newdata.append(np.array(newframe).ravel())
+
+    return np.asarray(newdata).reshape(ndata // nchan, -1)
