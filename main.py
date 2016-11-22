@@ -28,6 +28,8 @@ def set_arg_parser():
                         help="select path from menu")
     parser.add_argument("-P", "--pickpath", type=int, choices=list(range(20)), default=0,
                         help="Pick target path")
+    parser.add_argument("-s", "--specify", type=str, default=None,
+                        help="Specify a specific algo")
 
 
     ## models
@@ -90,7 +92,9 @@ if __name__ == '__main__':
 
     # actual stuff
     processname = None
-    if args.simplemetric:
+    if args.specify is not None:
+        processname = args.specify
+    elif args.simplemetric:
         processname = 'simple_metric'
     elif args.showqueue:
         processname = 'show_queue'
@@ -104,6 +108,10 @@ if __name__ == '__main__':
         processname = 'logfourier'
     elif args.ftfc:
         processname = 'ftfc'
+    elif args.ftfc:
+        processname = 'fftsplit'
+    else:
+        raise ValueError("No valid processor specified")
 
     queue = queue[:args.limit]
 

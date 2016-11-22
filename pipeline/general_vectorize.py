@@ -31,6 +31,9 @@ from ..vectorizers import spectral
 def vector_ridiculog(data, verbose=False):
     return spectral.ridiculous_log_transform(data)
 
+def vector_fftsplit(data, verbose=False):
+    return spectral.resamp_and_chunk(data)
+
 def null_vector_fn(data, verbose=False):
     return np.array(0)
 
@@ -38,6 +41,7 @@ def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, verbose=F
     if vector_fn is None:
         vector_fn = null_vector_fn
     vec_ary = []
+    label_ary = []
     name_ary = []
     time_start = int(time.time())
     time_str = str(time_start)[-7:-3] +'_'+ str(time_start)[-3:]

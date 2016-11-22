@@ -1,3 +1,4 @@
+from __future__ import division, print_function
 import os
 import numpy as np
 from scipy import fftpack, signal, interpolate
@@ -161,3 +162,24 @@ def plt_16x(plt, spec, npow=1):
 
 def vec_downsamp_sequential(data, verbose=False):
     pass
+
+def resamp_and_chunk(data, chunksize=1024, up=8, down=25, windowRatio=0.25, applyFFT=False, window=('tukey',.25)):
+    assert data.ndim == 2, "Data must be of dimension 2!"
+    nchan = data.shape[1]
+    data = signal.resample_poly(data, up=up, down=down, axis=0)
+    if not (data.shape[0]/chunksize == data.shape[0]//chunksize):
+        raise ValueError("Re-sampled Data is not evenly divisible by chunk size {} with shape {}".format(chunksize, data.shape[0]))
+    windowSize = chunksize
+    nchunk = int(data.shape[0] / (chunksize * windowRatio)) - int(1 / windowRatio)
+    chunksize = int( chunksize/(1 + applyFFT))  # if FFT, the output frames are half the size because symmetry
+    newdata = np.empty((nchunk, chunksize, nchan), dtype=float)
+    windowStep = int(chunksize * windowRatio)
+    winvector = signal.get_window(window, windowSize)
+    winmatrix = np.array([winvector,]*nchan).T
+    for i in range(nchunk):
+        chunk = data[i * windowStep:(i * windowStep) + windowSize]
+        if applyFFT:
+
+            chunk = np.abs(fftpack.fft(chunk*winmatrix, axis=0))[:chunksize]
+        newdata[i] = chunk
+    return newdata

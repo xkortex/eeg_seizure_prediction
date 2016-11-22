@@ -96,4 +96,4 @@ for i, yi in enumerate(grid_x):
 
 plt.figure(figsize=(10, 10))
 plt.imshow(figure)
-plt.show()sures 
+plt.show()
