@@ -31,8 +31,11 @@ from ..vectorizers import spectral
 def vector_ridiculog(data, verbose=False):
     return spectral.ridiculous_log_transform(data)
 
+def vector_split(data, verbose=False):
+    return spectral.resamp_and_chunk(data, windowRatio=1)
+
 def vector_fftsplit(data, verbose=False):
-    return spectral.resamp_and_chunk(data)
+    return spectral.resamp_and_chunk(data, chunksize=5120, applyFFT=True, downResult=8)
 
 def null_vector_fn(data, verbose=False):
     return np.array(0)
@@ -40,6 +43,7 @@ def null_vector_fn(data, verbose=False):
 def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, verbose=False):
     if vector_fn is None:
         vector_fn = null_vector_fn
+    basedir = os.path.dirname(queue[0]) + '/'
     vec_ary = []
     label_ary = []
     name_ary = []
@@ -47,7 +51,7 @@ def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, verbose=F
     time_str = str(time_start)[-7:-3] +'_'+ str(time_start)[-3:]
     filename = 'vec_{}_{}'.format(vec_name, time_str)
     notes = input("Please enter a note: ")
-    meta = {'notes': notes, 'basedir': os.path.abspath(queue[0]), 'time_start': time_start, 'length': len(queue)}
+    meta = {'notes': notes, 'basedir': basedir, 'time_start': time_start, 'length': len(queue)}
 
     for i in tqdm.tqdm(range(len(queue))):
         path = queue[i]
@@ -63,11 +67,11 @@ def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, verbose=F
             # print(exc. exc.message)
             print(exc_type, fname, exc_tb.tb_lineno)
         if i % checkpoint == 0:
-            dataio.dump_data(vec_ary, name_ary, meta, filename)
+            dataio.dump_data(vec_ary, name_ary, meta, filename, basedir)
 
     time_end = time.time()
     time_total = time_end-time_start
     meta.update({'time_end': time_end, 'runtime': time_total, 'avg_time': time_total/len(queue)})
 
     print('\nDone processing')
-    dataio.dump_data(vec_ary, name_ary, meta, filename)
+    dataio.dump_data(vec_ary, name_ary, meta, filename, basedir)

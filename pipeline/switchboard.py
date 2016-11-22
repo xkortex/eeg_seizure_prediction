@@ -32,7 +32,9 @@ def run_a_process(processname, queue, verbose=False):
                     'logfourier': general_vectorize.vector_ridiculog,
                     'sampen': sampen.sampen_eeg,
                     'ftfc': kludge_mh.vf_fft_timefreqcorr,
+                    'split': general_vectorize.vector_split,
                     'fftsplit': general_vectorize.vector_fftsplit,
+
                     }
     # todo: homogenize the pipeline process for vectorizing
     if processname in special_vecs:

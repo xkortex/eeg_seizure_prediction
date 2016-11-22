@@ -55,11 +55,11 @@ def separate_sets(data_vec, label_ary):
 
     return (d0, d1, dt)
 
-def dump_data(vec_ary, name_ary, meta, filename):
+def dump_data(vec_ary, name_ary, meta, filename, basedir):
     name_ary = pd.DataFrame(name_ary, columns=['path'])
-    np.save(filename, vec_ary)
-    name_ary.to_csv(filename + '_name.csv')
-    with open(filename + '.json', 'w') as jfile:
+    np.savez_compressed(basedir + '/' + filename, vec_ary)
+    name_ary.to_csv(basedir + '/' + filename + '_name.csv')
+    with open(basedir + '/' + filename + '.json', 'w') as jfile:
         json.dump(meta, jfile)
 
 def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True, shuffle=True):
