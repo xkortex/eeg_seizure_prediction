@@ -30,6 +30,8 @@ def set_arg_parser():
                         help="Pick target path")
     parser.add_argument("-s", "--specify", type=str, default=None,
                         help="Specify a specific algo")
+    parser.add_argument("-xp", "--checkpoint", type=int, default=10,
+                    help="Set how often to save data checkpoints")
 
 
     ## models
@@ -115,4 +117,4 @@ if __name__ == '__main__':
 
     queue = queue[:args.limit]
 
-    switchboard.run_a_process(processname, queue, verbose=args.verbose)
+    switchboard.run_a_process(processname, queue, checkpoint=args.checkpoint, verbose=args.verbose)

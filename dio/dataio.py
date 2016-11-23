@@ -1,5 +1,5 @@
 from __future__ import print_function, division
-import os
+import os, sys
 import numpy as np
 import pandas as pd
 import scipy.io
@@ -55,12 +55,24 @@ def separate_sets(data_vec, label_ary):
 
     return (d0, d1, dt)
 
-def dump_data(vec_ary, name_ary, meta, filename, basedir):
-    name_ary = pd.DataFrame(name_ary, columns=['path'])
-    np.savez_compressed(basedir + '/' + filename, vec_ary)
-    name_ary.to_csv(basedir + '/' + filename + '_name.csv')
-    with open(basedir + '/' + filename + '.json', 'w') as jfile:
-        json.dump(meta, jfile)
+def dump_data(vec_ary, name_ary, meta, filename, basedir, catchIOError=True):
+    def dump(name_ary, meta, filename, basedir):
+        name_ary = pd.DataFrame(name_ary, columns=['path'])
+        np.savez_compressed(basedir + '/' + filename, vec_ary)
+        name_ary.to_csv(basedir + '/' + filename + '_name.csv')
+        with open(basedir + '/' + filename + '.json', 'w') as jfile:
+            json.dump(meta, jfile)
+
+    if catchIOError:
+        try:
+            dump(name_ary, meta, filename, basedir)
+        except IOError as exc:
+            exc_type, exc_obj, exc_tb = sys.exc_info()
+            fname = os.path.split(exc_tb.tb_frame.f_code.co_filename)[1]
+            print(exc_type, fname, exc_tb.tb_lineno)
+    else:
+        dump(name_ary, meta, filename, basedir)
+
 
 def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True, shuffle=True):
     d0, d1, dt = separate_sets(data, labels)

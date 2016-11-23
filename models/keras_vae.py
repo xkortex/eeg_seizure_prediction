@@ -11,44 +11,67 @@ from keras import backend as K
 from keras import objectives
 from keras.datasets import mnist
 
-batch_size = 100
-original_dim = 784
-latent_dim = 2
-intermediate_dim = 256
+# global
 nb_epoch = 50
-epsilon_std = 1.0
 
-x = Input(batch_shape=(batch_size, original_dim))
-h = Dense(intermediate_dim, activation='relu')(x)
-z_mean = Dense(latent_dim)(h)
-z_log_var = Dense(latent_dim)(h)
+class VariationalAutoencoder(object):
+    def __init__(self, original_dim=784, latent_dim=2, intermediate_dim=256, batch_size=100, epsilon_std=1.0):
+        #vae params
+        self.batch_size = batch_size
+        self.original_dim = original_dim
+        self.latent_dim = latent_dim
+        self.intermediate_dim = intermediate_dim
+        self.epsilon_std = epsilon_std
+
+        x = Input(batch_shape=(batch_size, original_dim))
+        h = Dense(intermediate_dim, activation='relu')(x)
+        self.z_mean = Dense(latent_dim)(h)
+        self.z_log_var = Dense(latent_dim)(h)
+
+        # note that "output_shape" isn't necessary with the TensorFlow backend
+        z = Lambda(self.sampling, output_shape=(latent_dim,))([self.z_mean, self.z_log_var])
+
+        # we instantiate these layers separately so as to reuse them later
+        decoder_h = Dense(intermediate_dim, activation='relu')
+        decoder_mean = Dense(original_dim, activation='sigmoid')
+        h_decoded = decoder_h(z)
+        x_decoded_mean = decoder_mean(h_decoded)
 
 
-def sampling(args):
-    z_mean, z_log_var = args
-    epsilon = K.random_normal(shape=(batch_size, latent_dim), mean=0.,
-                              std=epsilon_std)
-    return z_mean + K.exp(z_log_var / 2) * epsilon
+        self.model = Model(x, x_decoded_mean)
+        self.model.compile(optimizer='rmsprop', loss=self.vae_loss)
 
-# note that "output_shape" isn't necessary with the TensorFlow backend
-z = Lambda(sampling, output_shape=(latent_dim,))([z_mean, z_log_var])
+        # build a model to project inputs on the latent space
+        self.encoder = Model(x, self.z_mean)
 
-# we instantiate these layers separately so as to reuse them later
-decoder_h = Dense(intermediate_dim, activation='relu')
-decoder_mean = Dense(original_dim, activation='sigmoid')
-h_decoded = decoder_h(z)
-x_decoded_mean = decoder_mean(h_decoded)
+        # build a digit generator that can sample from the learned distribution
+        decoder_input = Input(shape=(latent_dim,))
+        _h_decoded = decoder_h(decoder_input)
+        _x_decoded_mean = decoder_mean(_h_decoded)
+        self.generator = Model(decoder_input, _x_decoded_mean)
 
 
-def vae_loss(x, x_decoded_mean):
-    xent_loss = original_dim * objectives.binary_crossentropy(x, x_decoded_mean)
-    kl_loss = - 0.5 * K.sum(1 + z_log_var - K.square(z_mean) - K.exp(z_log_var), axis=-1)
-    return xent_loss + kl_loss
+    def vae_loss(self, x, x_decoded_mean):
+        xent_loss = self.original_dim * objectives.binary_crossentropy(x, x_decoded_mean)
+        kl_loss = - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+        return xent_loss + kl_loss
 
-vae = Model(x, x_decoded_mean)
-vae.compile(optimizer='rmsprop', loss=vae_loss)
 
-# train the VAE on MNIST digits
+    def sampling(self, args):
+        z_mean, z_log_var = args
+        epsilon = K.random_normal(shape=(self.batch_size, self.latent_dim), mean=0.,
+                                  std=self.epsilon_std)
+        return z_mean + K.exp(z_log_var / 2) * epsilon
+
+    def fit(self, x, y, batch_size=None, nb_epoch=10, verbose=1, callbacks=[], validation_split=0.,
+            validation_data=None, shuffle=True, class_weight=None, sample_weight=None):
+        pass
+
+
+vaeclass = VariationalAutoencoder()
+vae = vaeclass.model
+
+# ==== dataset handling - train the VAE on MNIST digits ===
 (x_train, y_train), (x_test, y_test) = mnist.load_data()
 
 x_train = x_train.astype('float32') / 255.
@@ -56,15 +79,15 @@ x_test = x_test.astype('float32') / 255.
 x_train = x_train.reshape((len(x_train), np.prod(x_train.shape[1:])))
 x_test = x_test.reshape((len(x_test), np.prod(x_test.shape[1:])))
 
+
 vae.fit(x_train, x_train,
         shuffle=True,
         nb_epoch=nb_epoch,
         batch_size=batch_size,
         validation_data=(x_test, x_test))
 
-# build a model to project inputs on the latent space
-encoder = Model(x, z_mean)
 
+# ===== plotting encoder output
 # display a 2D plot of the digit classes in the latent space
 x_test_encoded = encoder.predict(x_test, batch_size=batch_size)
 plt.figure(figsize=(6, 6))
@@ -72,12 +95,8 @@ plt.scatter(x_test_encoded[:, 0], x_test_encoded[:, 1], c=y_test)
 plt.colorbar()
 plt.show()
 
-# build a digit generator that can sample from the learned distribution
-decoder_input = Input(shape=(latent_dim,))
-_h_decoded = decoder_h(decoder_input)
-_x_decoded_mean = decoder_mean(_h_decoded)
-generator = Model(decoder_input, _x_decoded_mean)
 
+# ====== plotting decoder from latent space =======
 # display a 2D manifold of the digits
 n = 15  # figure with 15x15 digits
 digit_size = 28

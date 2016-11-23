@@ -22,7 +22,7 @@ def queue_auto_process(queue, vector_fn=None):
     return queue
 
 
-def run_a_process(processname, queue, verbose=False):
+def run_a_process(processname, queue, checkpoint=10, verbose=False):
     if processname is None:
         raise ValueError("No valid process selected")
     vector_fn = None
@@ -52,4 +52,4 @@ def run_a_process(processname, queue, verbose=False):
     else:
         raise ValueError("Invalid process: {}".format(processname))
 
-    results = auto_process(queue, vector_fn, processname, verbose=verbose)
+    results = auto_process(queue, vector_fn, processname, checkpoint=checkpoint, verbose=verbose)

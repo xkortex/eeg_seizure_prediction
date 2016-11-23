@@ -199,7 +199,7 @@ def resamp_and_chunk(data, chunksize=1024, up=8, down=25, windowRatio=0.25, appl
     outsize = chunksize
     if downResult:
         outsize = int(chunksize / downResult)
-    print('FS: {} chunksize: {} windowsize: {} outsize: {}'.format(fs, chunksize, windowSize, outsize))
+    # print('FS: {} chunksize: {} windowsize: {} outsize: {}'.format(fs, chunksize, windowSize, outsize))
 
     for i in range(nchunk):
         chunk = data[i * windowStep:(i * windowStep) + windowSize]
