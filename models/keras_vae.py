@@ -8,7 +8,7 @@ import matplotlib.pyplot as plt
 from keras.layers import Input, Dense, Lambda, Flatten, Reshape
 from keras.layers import Convolution2D, Deconvolution2D
 from keras.models import Model
-from keras import backend as K
+from keras import backend as K_backend
 from keras import objectives
 from keras.datasets import mnist
 
@@ -53,16 +53,16 @@ class VariationalAutoencoder(object):
 
     def vae_loss(self, x, x_decoded_mean):
         xent_loss = self.original_dim * objectives.binary_crossentropy(x, x_decoded_mean)
-        kl_loss = - 0.5 * K.sum(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+        kl_loss = - 0.5 * K_backend.sum(1 + self.z_log_var - K_backend.square(self.z_mean) - K_backend.exp(self.z_log_var), axis=-1)
         return xent_loss + kl_loss
 
 
     def sampling(self, z_args):
         "Unpacks the tuple input and conducts probabilistic sampling"
         z_mean, z_log_var = z_args
-        epsilon = K.random_normal(shape=(self.batch_size, self.latent_dim), mean=0.,
-                                  std=self.epsilon_std)
-        return z_mean + K.exp(z_log_var / 2) * epsilon
+        epsilon = K_backend.random_normal(shape=(self.batch_size, self.latent_dim), mean=0.,
+                                          std=self.epsilon_std)
+        return z_mean + K_backend.exp(z_log_var / 2) * epsilon
 
     def fit(self, x, y, batch_size=None, nb_epoch=10, verbose=1, callbacks=[], validation_split=0.,
             validation_data=None, shuffle=True, class_weight=None, sample_weight=None):
@@ -77,7 +77,7 @@ class ConvoVAE(object):
 
     Reference: "Auto-Encoding Variational Bayes" https://arxiv.org/abs/1312.6114
     '''
-    def __init__(self, input_shape=(28,28), latent_dim=2, intermediate_dim=256, batch_size=100, epsilon_std=1.0):
+    def __init__(self, input_shape=(28,28,1), latent_dim=2, intermediate_dim=256, batch_size=100, epsilon_std=1.0):
         # input image dimensions
         self.input_shape = input_shape
         if len(input_shape) == 3:
@@ -99,16 +99,12 @@ class ConvoVAE(object):
         nb_conv = 3
 
         batch_size = 100
-        if K.image_dim_ordering() == 'th':
-            original_img_size = (self.img_chns, self.img_rows, self.img_cols)
+        if K_backend.image_dim_ordering() == 'th':
+            self.original_img_size = (self.img_chns, self.img_rows, self.img_cols)
         else:
-            original_img_size = (self.img_rows, self.img_cols, self.img_chns)
-        latent_dim = 2
-        intermediate_dim = 128
-        epsilon_std = 1.0
-        nb_epoch = 5
+            self.original_img_size = (self.img_rows, self.img_cols, self.img_chns)
 
-        x = Input(batch_shape=(batch_size,) + original_img_size)
+        x = Input(batch_shape=(batch_size,) + self.original_img_size)
         conv_1 = Convolution2D(self.img_chns, 2, 2, border_mode='same', activation='relu')(x)
         conv_2 = Convolution2D(nb_filters, 2, 2,
                                border_mode='same', activation='relu', subsample=(2, 2))(conv_1)
@@ -119,18 +115,18 @@ class ConvoVAE(object):
         flat = Flatten()(conv_4)
         hidden = Dense(intermediate_dim, activation='relu')(flat)
 
-        z_mean = Dense(latent_dim)(hidden)
-        z_log_var = Dense(latent_dim)(hidden)
+        self.z_mean = Dense(latent_dim)(hidden)
+        self.z_log_var = Dense(latent_dim)(hidden)
 
         # note that "output_shape" isn't necessary with the TensorFlow backend
         # so you could write `Lambda(sampling)([z_mean, z_log_var])`
-        z = Lambda(self.sampling, output_shape=(latent_dim,))([z_mean, z_log_var])
+        z = Lambda(self.sampling, output_shape=(latent_dim,))([self.z_mean, self.z_log_var])
 
         # we instantiate these layers separately so as to reuse them later
         decoder_hid = Dense(intermediate_dim, activation='relu')
         decoder_upsample = Dense(nb_filters * 14 * 14, activation='relu')
 
-        if K.image_dim_ordering() == 'th':
+        if K_backend.image_dim_ordering() == 'th':
             output_shape = (batch_size, nb_filters, 14, 14)
         else:
             output_shape = (batch_size, 14, 14, nb_filters)
@@ -140,7 +136,7 @@ class ConvoVAE(object):
                                            border_mode='same', subsample=(1, 1), activation='relu')
         decoder_deconv_2 = Deconvolution2D(nb_filters, nb_conv, nb_conv, output_shape,
                                            border_mode='same', subsample=(1, 1),activation='relu')
-        if K.image_dim_ordering() == 'th':
+        if K_backend.image_dim_ordering() == 'th':
             output_shape = (batch_size, nb_filters, 29, 29)
         else:
             output_shape = (batch_size, 29, 29, nb_filters)
@@ -161,7 +157,7 @@ class ConvoVAE(object):
         # self.model.summary()
 
         # build a model to project inputs on the latent space
-        self.encoder = Model(x, z_mean)
+        self.encoder = Model(x, self.z_mean)
 
         # build a digit generator that can sample from the learned distribution
         # todo: (un)roll this
@@ -177,17 +173,17 @@ class ConvoVAE(object):
 
     def sampling(self, args):
         z_mean, z_log_var = args
-        epsilon = K.random_normal(shape=(self.batch_size, self.latent_dim),
-                                  mean=0., std=self.epsilon_std)
-        return z_mean + K.exp(z_log_var) * epsilon
+        epsilon = K_backend.random_normal(shape=(self.batch_size, self.latent_dim),
+                                          mean=0., std=self.epsilon_std)
+        return z_mean + K_backend.exp(z_log_var) * epsilon
 
     def vae_loss(self, x, x_decoded_mean):
         # NOTE: binary_crossentropy expects a batch_size by dim
         # for x and x_decoded_mean, so we MUST flatten these!
-        x = K.flatten(x)
-        x_decoded_mean = K.flatten(x_decoded_mean)
+        x = K_backend.flatten(x)
+        x_decoded_mean = K_backend.flatten(x_decoded_mean)
         xent_loss = self.img_rows * self.img_cols * objectives.binary_crossentropy(x, x_decoded_mean)
-        kl_loss = - 0.5 * K.mean(1 + self.z_log_var - K.square(self.z_mean) - K.exp(self.z_log_var), axis=-1)
+        kl_loss = - 0.5 * K_backend.mean(1 + self.z_log_var - K_backend.square(self.z_mean) - K_backend.exp(self.z_log_var), axis=-1)
         return xent_loss + kl_loss
 
     def fit(self, x, y, batch_size=None, nb_epoch=10, verbose=1, callbacks=[], validation_split=0.,
