@@ -75,6 +75,8 @@ class Crossfire(object):
 
         ## ==== End of encoding portion ======
 
+        # todo: I think I might need more linear in between the convo and latent
+
         ## ==== Crossfire classifier =========
         #         c = Lambda(self.crosser, output_shape=(latent_dim,))(self.z_mean, self.z_log_var)
         classer = Dense(n_classes, init='normal', activation='softmax', name='classer')(self.z_mean)
@@ -133,6 +135,7 @@ class Crossfire(object):
         self.model.compile(optimizer='rmsprop', loss=self.vae_loss)
         self.classifier.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
 
+
     def sampling(self, args):
         z_mean, z_log_var = args
         epsilon = K_backend.random_normal(shape=(self.batch_size, self.latent_dim),
@@ -166,6 +169,10 @@ class Crossfire(object):
 
     def crossfit(self, x, y, batch_size=None, nb_epoch=10, verbose=1, callbacks=[], validation_split=0.,
                  validation_data=None, shuffle=True, class_weight=None, sample_weight=None):
+        """ Note: I found that during full-epoch cross-traning, after a cycle or two, the error goes to NaN. I think
+        the loss is exploding w.r.t. VAE after the classifier pass. Will most likely need to use sub-epochs or ideally,
+        combine the loss function into a single metric. 
+        """
         for i in range(nb_epoch):
             callbacks_history = self.model.fit(x, x, batch_size, 1, verbose, callbacks, validation_split,
                                                validation_data, shuffle, class_weight, sample_weight)
