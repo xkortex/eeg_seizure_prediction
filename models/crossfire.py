@@ -171,7 +171,7 @@ class Crossfire(object):
                  validation_data=None, shuffle=True, class_weight=None, sample_weight=None):
         """ Note: I found that during full-epoch cross-traning, after a cycle or two, the error goes to NaN. I think
         the loss is exploding w.r.t. VAE after the classifier pass. Will most likely need to use sub-epochs or ideally,
-        combine the loss function into a single metric. 
+        combine the loss function into a single metric.
         """
         for i in range(nb_epoch):
             callbacks_history = self.model.fit(x, x, batch_size, 1, verbose, callbacks, validation_split,
