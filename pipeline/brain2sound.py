@@ -33,8 +33,6 @@ except ImportError:
         wavfile.write(output_file, sample_rate, np.int16(data * 2 ** 15))
 
 
-
-
 def convert(mat):
     # structure:
     # mat: dict
@@ -67,8 +65,41 @@ def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75, overwrite=
     save_audio(outfile, y, sample_rate)
     return 0
 
+def auralize2(input_file, outpath=None, sample_rate=44100, thresh=.75, overwrite=False, verbose=False):
+    """
+    Outputs to stereo.
+    Based on the Melbourne data, even channel indicies should be paired with even, odd with odd,
+    :param input_file:
+    :param outpath:
+    :param sample_rate:
+    :param thresh:
+    :param overwrite:
+    :param verbose:
+    :return:
+    """
+    prefix, ext = os.path.basename(input_file).split('.')
+    outfile = '{}_{}.{}'.format(prefix, sample_rate, 'wav')
+    if outpath is not None:
+        outfile = '{}/{}'.format(outpath, outfile)
+    if os.path.exists(outfile) and not overwrite:
+        return 1
+    data = convert(loadmat(input_file))['data']
+    vc = dataio.validcount(data)
+    if vc < thresh:
+        if verbose:
+            print('Dropout: {} - {}'.format(vc, input_file))
+        return 1
+    channel_count = data.shape[1]
+    # scale to [-1, 1], put all channels after each other
+    evens = data[:, 0::2]
+    odds = data[:, 1::2]
+    y = np.vstack([MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, i:i+1]) for i in range(channel_count)])
 
-def auto_process(queue, verbose=False):
+    save_audio(outfile, y, sample_rate)
+    return 0
+
+
+def auto_process(queue, vector_fn=None, processname='brainsound', checkpoint=None, verbose=False):
     basepath = os.path.dirname(queue[0])
     soundpath = basepath + '/sound/'
     if not (os.path.exists(soundpath)):
