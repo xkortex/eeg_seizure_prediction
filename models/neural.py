@@ -4,6 +4,10 @@ from keras.layers import Dense, Input, BatchNormalization, Dropout, GaussianNois
 from keras.layers import LSTM
 from keras.layers.convolutional import Convolution1D
 from keras.layers.convolutional import MaxPooling1D
+
+import keras.layers.core as core
+import keras.layers.convolutional as conv
+import keras.models as models
 # fix random seed for reproducibility
 np.random.seed(7)
 
@@ -135,4 +139,84 @@ def autoencoder3(ds, compression_factor=16, input_noise=0.2, dropout_p=0.1, acti
     autoencoder.model_name = 'Autoencoder 1'
     return autoencoder, encoder, decoder
 
+
+def Simple_Convo(train, nb_classes):
+    batch_size = 128
+    img_rows, img_cols = 56, 56
+
+    nb_filters_1 = 32  # 64
+    nb_filters_2 = 64  # 128
+    nb_filters_3 = 128  # 256
+    nb_conv = 3
+
+    # train = np.concatenate([train, train], axis=1)
+    trainX = train[:, 1:].reshape(train.shape[0], 28, 28, 1)
+    trainX = trainX.astype(float)
+
+    trainX /= 255.0
+    trainX = np.concatenate([trainX, np.roll(trainX, 14, axis=1)], axis=1)
+    trainX = np.concatenate([trainX, np.fliplr(np.roll(trainX, 7, axis=2))], axis=2)
+    print(trainX.shape)
+
+    cnn = models.Sequential()
+
+    cnn.add(conv.Convolution2D(nb_filters_1, nb_conv, nb_conv, activation="relu", input_shape=(img_rows, img_cols, 1),
+                               border_mode='same'))
+    cnn.add(conv.Convolution2D(nb_filters_1, nb_conv, nb_conv, activation="relu", border_mode='same'))
+    cnn.add(conv.MaxPooling2D(strides=(2, 2)))
+
+    cnn.add(conv.Convolution2D(nb_filters_2, nb_conv, nb_conv, activation="relu", border_mode='same'))
+    cnn.add(conv.Convolution2D(nb_filters_2, nb_conv, nb_conv, activation="relu", border_mode='same'))
+    cnn.add(conv.MaxPooling2D(strides=(2, 2)))
+
+    # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+    # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+    # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+    # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+    # cnn.add(conv.MaxPooling2D(strides=(2,2)))
+
+    cnn.add(core.Flatten())
+    cnn.add(core.Dropout(0.2))
+    cnn.add(core.Dense(128, activation="relu"))  # 4096
+    cnn.add(core.Dense(nb_classes, activation="softmax"))
+
+    cnn.summary()
+    return cnn
+
+class Simple_Convo_Classer(object):
+    def __init__(self, img_size, nb_classes):
+        batch_size = 128
+        img_rows, img_cols = img_size
+
+        nb_filters_1 = 32  # 64
+        nb_filters_2 = 64  # 128
+        nb_filters_3 = 128  # 256
+        nb_conv = 3
+
+
+        cnn = models.Sequential()
+
+        cnn.add(conv.Convolution2D(nb_filters_1, nb_conv, nb_conv, activation="relu", input_shape=(img_rows, img_cols, 1),
+                                   border_mode='same'))
+        cnn.add(conv.Convolution2D(nb_filters_1, nb_conv, nb_conv, activation="relu", border_mode='same'))
+        cnn.add(conv.MaxPooling2D(strides=(2, 2)))
+
+        cnn.add(conv.Convolution2D(nb_filters_2, nb_conv, nb_conv, activation="relu", border_mode='same'))
+        cnn.add(conv.Convolution2D(nb_filters_2, nb_conv, nb_conv, activation="relu", border_mode='same'))
+        cnn.add(conv.MaxPooling2D(strides=(2, 2)))
+
+        # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+        # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+        # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+        # cnn.add(conv.Convolution2D(nb_filters_3, nb_conv, nb_conv, activation="relu", border_mode='same'))
+        # cnn.add(conv.MaxPooling2D(strides=(2,2)))
+
+        cnn.add(core.Flatten())
+        cnn.add(core.Dropout(0.2))
+        cnn.add(core.Dense(128, activation="relu"))  # 4096
+        cnn.add(core.Dense(nb_classes, activation="softmax"))
+
+        cnn.summary()
+        cnn.compile(loss="categorical_crossentropy", optimizer="adam", metrics=["accuracy"])
+        self.cnn = cnn
 

@@ -49,6 +49,9 @@ def separate_sets(data_vec, label_ary):
     # df = pd.DataFrame(data_vec)
     # df['label'] = pd.Series(label_ary)
     """This part currently breaks on 3D arrays"""
+    if label_ary.shape >= 1:
+        if label_ary.shape[1] >= 1:
+            label_ary = label_ary[:,0]
     d0 = data_vec[np.where(label_ary.ravel() == 0)[0], :]
     d1 = data_vec[np.where(label_ary.ravel() == 1)[0], :]
     dt = data_vec[np.where(label_ary.ravel() == -1)[0], :]
@@ -83,11 +86,13 @@ def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True, sh
         ratio = len(d0) / len(d1)
         mult = int(ratio) + 1
         d1 = np.concatenate([d1, ] * mult, axis=0)
+    else:
+        raise ValueError("Invalid resample argument: {}".format(resample))
 
     new_set = np.concatenate([d0, d1], axis=0)
-    print('new set: ', new_set.shape)
+    # print('new set: ', new_set.shape)
     L0, L1 = np.zeros(len(d0)).reshape(-1, 1), np.ones(len(d1)).reshape(-1, 1)
-    print('label shapes: ', L0.shape, L1.shape, len(L0) + len(L1))
+    # print('label shapes: {} {} total len {}'.format(L0.shape, L1.shape, len(L0) + len(L1)))
     new_labels = np.concatenate([L0, L1], axis=0).reshape(-1, 1)
     #     print('new labels: ', new_labels.shape)
     if not shuffle:
@@ -112,6 +117,102 @@ def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True, sh
             Y = np.array(shuf_y)
 
     return X, Y
+
+def subdiv_split_shuffle(data, labels, resample='pare', validation_split=0.5, noise=None, preshuffle=True, shuffle=False,
+                         seed=1337):
+    """
+    Takes a fixed percentage split of the data for validation with equal representation of classes. The remaining
+    data is returned as training set
+    :param data:
+    :param labels:
+    :param resample:
+    :param validation_split: If you set the validation_split argument in model.fit to e.g. 0.1, then the validation data
+    used will be the last 10% of the data. If you set it to 0.25, it will be the last 25% of the data, etc.
+    :param noise:
+    :param preshuffle: shuffle the incoming data before taking validation split
+    :param shuffle:
+    :param seed:
+    :return:
+    """
+
+    d0, d1, dt = separate_sets(data, labels)
+    nb_x0, nb_x1, nb_xt = len(d0), len(d1), len(dt)
+    y0, y1 = labels[:nb_x0], labels[nb_x0:]
+    assert nb_x0 >= nb_x1, "Only deals with imbalanced data sets with excess d0 class data at this point"
+    if preshuffle:
+        np.random.seed(seed)
+        np.random.shuffle(d0)
+        np.random.shuffle(d1)
+    if resample == 'pare':
+        # Create a balanced test set, but hand the rest off to the training set
+        val_cut = int(nb_x1 * validation_split) # number to put in validation set
+        print('val_cut: ', val_cut)
+        # if shuffle:
+        #     np.random.shuffle(d0)
+        #     np.random.shuffle(d1)
+        cut0 = nb_x0-val_cut
+        cut1 = nb_x1-val_cut
+        d1_train = d1[:cut1]
+        y1_train = np.ones((cut1, 1)) # y1[:nb_x1-val_cut]
+        d1_test  = d1[cut1:]
+        y1_test  = np.ones((val_cut, 1))# y1[val_cut:]
+
+        d0_train = d0[:cut0]
+        y0_train = np.zeros((cut0, 1))# y0[:cut0]
+        d0_test  = d0[cut0:]
+        y0_test  = np.zeros((val_cut, 1))# y0[cut0:]
+
+        x_train = np.concatenate([d0_train, d1_train], axis=0)
+        y_train = np.concatenate([y0_train, y1_train], axis=0)
+        x_test  = np.concatenate([d0_test, d1_test], axis=0)
+        y_test  = np.concatenate([y0_test, y1_test], axis=0)
+
+    elif resample == 'adasyn':
+        raise NotImplementedError('not ready yet')
+
+
+    else:
+        raise ValueError("Invalid resample argument: {}".format(resample))
+
+    if shuffle:
+        raise NotImplementedError('Untested Feature')
+        np.random.seed(seed)
+        np.random.shuffle(x_train)
+        np.random.seed(seed)
+        np.random.shuffle(y_train)
+        np.random.seed(seed)
+        np.random.shuffle(x_test)
+        np.random.seed(seed)
+        np.random.shuffle(y_test)
+    return (x_train, y_train), (x_test, y_test)
+
+def shuffle_split_with_label(data, labels, resample='down', seed=1337):
+    # print("Warning: this method is not validated yet")
+    d0, d1, dt = separate_sets(data, labels)
+    y0, y1 = labels[:len(d0)], labels[len(d0):]
+    # print('d0 {} d1 {} y0 {} y1 {}'.format(d0.shape, d1.shape, y0.shape, y1.shape))
+
+    assert len(d0) >= len(d1), 'must have more 0 than 1 classes'
+    if resample == 'down':
+        np.random.seed(seed)
+        np.random.shuffle(d0)
+        d0 = d0[:len(d1)]
+        y0 = y0[:len(d1)]
+
+    else:
+        raise ValueError("Invalid resample argument: {}".format(resample))
+
+    # print('d0 {} d1 {} y0 {} y1 {}'.format(d0.shape, d1.shape, y0.shape, y1.shape))
+    new_x = np.concatenate([d0, d1], axis=0)
+    new_y = np.concatenate([y0, y1], axis=0)
+    # print('new shapes', new_x.shape, new_y.shape)
+    assert new_x.shape[0] == new_y.shape[0], 'X and Label shapes mismatch, something broke'
+    np.random.seed(seed)
+    np.random.shuffle(new_x)
+    np.random.seed(seed)
+    np.random.shuffle(new_y)
+
+    return new_x, new_y
 
 def deinterleave(data, nchan=16):
     """
