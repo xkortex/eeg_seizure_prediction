@@ -1,3 +1,4 @@
+from __future__ import division, print_function
 import os
 import numpy as np
 from scipy import fftpack, signal, interpolate
@@ -67,6 +68,22 @@ def ridiculous_log_transform(data, ndim=1024, fs=400, smoothing_cutoff=1, hard_c
     fn_ftsig_rs = interpolate.Akima1DInterpolator(t_rs, ftsig_r)
     # And now map an exponential domain, thereby creating a higher density of points around the main freq
     log_ftsig = fn_ftsig_rs(np.exp(np.linspace(log_low_cut, np.log(hard_cutoff), ndim)))
+    return log_ftsig
+
+def freq_log_transform(ftsig, fs=400, smoothing_cutoff=1, hard_cutoff=100, log_low_cut=-5):
+
+    # todo: FIX UP THE CRUFT!!!
+    ndim = len(ftsig)
+    ftsig_a = ftsig#ftsig[:len(ftsig)*hard_cutoff//fs]
+    # Smooth it with low pass and downsample. Low pass may not be necessary since resample does appropriate
+    # pre-filtering
+    # ftsig_f = auxfilter.butterfilt(ftsig_a, smoothing_cutoff, fs)
+
+    # Ok, now the weird bit. Take the existing x-domain and create an interpolation image of it
+    t_rs = np.linspace(1, hard_cutoff, ndim)
+    fn_ftsig_rs = interpolate.Akima1DInterpolator(t_rs, ftsig_a)
+    # And now map an exponential domain, thereby creating a higher density of points around the main freq
+    log_ftsig = fn_ftsig_rs(np.exp(np.linspace(log_low_cut, np.log(hard_cutoff), hard_cutoff)))
     return log_ftsig
 
 
@@ -158,3 +175,40 @@ def plt_16x(plt, spec, npow=1):
         ax = plt.gca()
         ax.get_yaxis().set_visible(False)
         ax.get_xaxis().set_visible(False)
+
+def vec_downsamp_sequential(data, verbose=False):
+    pass
+
+
+def resamp_and_chunk(data, chunksize=1024, up=8, down=25, windowRatio=0.25, applyFFT=False, window=('tukey', .25),
+                     logFT=False, downResult=None, fs=400):
+    assert data.ndim == 2, "Data must be of dimension 2!"
+    nchan = data.shape[1]
+    data = signal.resample_poly(data, up=up, down=down, axis=0)
+    fs = fs * up / down
+    if not (data.shape[0] / chunksize == data.shape[0] // chunksize):
+        raise ValueError(
+            "Re-sampled Data is not evenly divisible by chunk size {} with shape {}".format(chunksize, data.shape[0]))
+    windowSize = chunksize
+    nchunk = int(data.shape[0] / (chunksize * windowRatio)) - int(1 / windowRatio)
+    chunksize = int(chunksize / (1 + applyFFT))  # if FFT, the output frames are half the size because symmetry
+    newdata = np.empty((nchunk, chunksize, nchan), dtype=float)
+    windowStep = int(chunksize * windowRatio)
+    winvector = signal.get_window(window, windowSize)
+    winmatrix = np.array([winvector, ] * nchan).T
+    outsize = chunksize
+    if downResult:
+        outsize = int(chunksize / downResult)
+    # print('FS: {} chunksize: {} windowsize: {} outsize: {}'.format(fs, chunksize, windowSize, outsize))
+
+    for i in range(nchunk):
+        chunk = data[i * windowStep:(i * windowStep) + windowSize]
+        if applyFFT:
+            chunk = np.abs(fftpack.fft(chunk * winmatrix, axis=0))[:chunksize]
+        newdata[i] = chunk
+
+    if logFT:
+        raise NotImplementedError("Not ready yet!!")
+    if downResult:
+        newdata = signal.resample_poly(newdata, 2, 2 * downResult, axis=1)
+    return newdata

@@ -28,6 +28,10 @@ def set_arg_parser():
                         help="select path from menu")
     parser.add_argument("-P", "--pickpath", type=int, choices=list(range(20)), default=0,
                         help="Pick target path")
+    parser.add_argument("-s", "--specify", type=str, default=None,
+                        help="Specify a specific algo")
+    parser.add_argument("-xp", "--checkpoint", type=int, default=10,
+                    help="Set how often to save data checkpoints")
 
 
     ## models
@@ -57,18 +61,18 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dataErrors = True if not args.nodataerror else False # invert because this is a default-on state
 
-    paths = {'/home/mike/Downloads/minidata/': None,
-            '/media/mike/Elements/data/kaggle/melbourne/train_all/': None,
-             '/media/mike/Elements/data/kaggle/melbourne/train_1/': None,
-             '/media/mike/Elements/data/kaggle/melbourne/train_2/': None,
-             '/media/mike/Elements/data/kaggle/melbourne/train_3/': None,
+    paths = {'/home/mike/data/minidata/': None,
+            # '/media/mike/Elements/data/kaggle/melbourne/train_all/': None,
+            #  '/media/mike/Elements/data/kaggle/melbourne/train_1/': None,
+            #  '/media/mike/Elements/data/kaggle/melbourne/train_2/': None,
+            #  '/media/mike/Elements/data/kaggle/melbourne/train_3/': None,
              '/run/media/mike/Elements/data/kaggle/melbourne/test_new': None,
+             '/run/media/mike/Elements/data/kaggle/melbourne/train_all': None,
              '/home/mike/Downloads/test_new/': None,
-             'X /home/mike/Downloads/test_1_new/': None,
-             'X /home/mike/Downloads/test_2_new/': None,
-             'X /home/mike/Downloads/test_3_new/': None,
+             # 'X /home/mike/Downloads/test_1_new/': None,
+             # 'X /home/mike/Downloads/test_2_new/': None,
+             # 'X /home/mike/Downloads/test_3_new/': None,
              '/home/mike/data/train/': None,
-             '/media/mike/Elements/data/kaggle/melbourne/': None,
              '/run/media/mike/Elements/data/kaggle/upenn/clips/Patient_1': None,
 }
 
@@ -90,7 +94,9 @@ if __name__ == '__main__':
 
     # actual stuff
     processname = None
-    if args.simplemetric:
+    if args.specify is not None:
+        processname = args.specify
+    elif args.simplemetric:
         processname = 'simple_metric'
     elif args.showqueue:
         processname = 'show_queue'
@@ -104,7 +110,11 @@ if __name__ == '__main__':
         processname = 'logfourier'
     elif args.ftfc:
         processname = 'ftfc'
+    elif args.ftfc:
+        processname = 'fftsplit'
+    else:
+        raise ValueError("No valid processor specified")
 
     queue = queue[:args.limit]
 
-    switchboard.run_a_process(processname, queue, verbose=args.verbose)
+    switchboard.run_a_process(processname, queue, checkpoint=args.checkpoint, verbose=args.verbose)

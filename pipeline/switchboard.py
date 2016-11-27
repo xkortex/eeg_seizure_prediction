@@ -22,45 +22,34 @@ def queue_auto_process(queue, vector_fn=None):
     return queue
 
 
-def run_a_process(processname, queue, verbose=False):
+def run_a_process(processname, queue, checkpoint=10, verbose=False):
+    if processname is None:
+        raise ValueError("No valid process selected")
     vector_fn = None
     vec_name = 'foo'
+    special_vecs = ['show_queue', 'brainsound']
+    process_vecs = {'simple_metric': simple_metrics.vector_metric,
+                    'logfourier': general_vectorize.vector_ridiculog,
+                    'sampen': sampen.sampen_eeg,
+                    'ftfc': kludge_mh.vf_fft_timefreqcorr,
+                    'split': general_vectorize.vector_split,
+                    'fftsplit': general_vectorize.vector_fftsplit,
+
+                    }
     # todo: homogenize the pipeline process for vectorizing
-    if processname == 'simple_metric':
+    if processname in special_vecs:
+        if processname == 'show_queue':
+            auto_process = queue_auto_process
+
+        elif processname == 'brainsound':
+            auto_process = brain2sound.auto_process
+
+
+    elif processname in process_vecs:
         auto_process = general_vectorize.auto_process
-        vector_fn = simple_metrics.vector_metric
-        vec_name = 'simple'
-
-    elif processname == 'show_queue':
-        auto_process = queue_auto_process
-
-    elif processname == 'brainsound':
-        auto_process = brain2sound.auto_process
-
-    elif processname == 'generalvec':
-        auto_process = general_vectorize.auto_process
-        vector_fn = general_vectorize.vector_ridiculog
-        vec_name = 'ridiculog'
-
-    elif processname == 'sampen':
-        auto_process = general_vectorize.auto_process
-        vector_fn = sampen.sampen_eeg
-        vec_name = 'sampen'
-
-    elif processname == 'logfourier':
-        auto_process = general_vectorize.auto_process
-        vector_fn = general_vectorize.vector_ridiculog
-        vec_name = 'sampen'
-
-    elif processname == 'ftfc':
-        auto_process = general_vectorize.auto_process
-        vector_fn = kludge_mh.vf_fft_timefreqcorr
-        vec_name = 'mh_ftfc'
-
-
+        vector_fn = process_vecs[processname]
 
     else:
-        print("No valid process selected")
-        raise ValueError("No valid process selected")
+        raise ValueError("Invalid process: {}".format(processname))
 
-    results = auto_process(queue, vector_fn, vec_name, verbose=verbose)
+    results = auto_process(queue, vector_fn, processname, checkpoint=checkpoint, verbose=verbose)

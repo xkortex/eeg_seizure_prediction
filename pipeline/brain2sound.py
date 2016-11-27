@@ -20,6 +20,7 @@ from scipy.io import loadmat
 from sklearn.preprocessing import MinMaxScaler
 
 from ..dio import dataio
+from ..msignal import msignal
 
 try:
     # Allows other file formats, such as FLAC.
@@ -31,8 +32,6 @@ except ImportError:
     from scipy.io import wavfile
     def save_audio(output_file, data, sample_rate):
         wavfile.write(output_file, sample_rate, np.int16(data * 2 ** 15))
-
-
 
 
 def convert(mat):
@@ -67,10 +66,50 @@ def auralize(input_file, outpath=None, sample_rate=44100, thresh=.75, overwrite=
     save_audio(outfile, y, sample_rate)
     return 0
 
+def auralize2(input_file, outpath=None, sample_rate=44100, thresh=.75, overwrite=False, verbose=False):
+    """
+    Outputs to stereo.
+    Based on the Melbourne data, even channel indicies should be paired with even, odd with odd,
+    :param input_file:
+    :param outpath:
+    :param sample_rate:
+    :param thresh:
+    :param overwrite:
+    :param verbose:
+    :return:
+    """
+    prefix, ext = os.path.basename(input_file).split('.')
+    outfile = '{}_{}.{}'.format(prefix, sample_rate, 'wav')
+    if outpath is not None:
+        outfile = '{}/{}'.format(outpath, outfile)
+    if os.path.exists(outfile) and not overwrite:
+        return 1
+    data = convert(loadmat(input_file))['data']
+    vc = dataio.validcount(data)
+    if vc < thresh:
+        if verbose:
+            print('Dropout: {} - {}'.format(vc, input_file))
+        return 1
+    channel_count = data.shape[1]
+    scaled_data = msignal.norm_softclip(data, norm_by_chan=1)
 
-def auto_process(queue, verbose=False):
+    evens = scaled_data[:, 0::2]
+    odds = scaled_data[:, 1::2]
+    evenstack_l = np.vstack([evens[:, [i]] for i in range(0, channel_count, 2)])
+    evenstack_r = np.vstack([evens[:, [i]] for i in range(1, channel_count, 2)])
+    oddstack_l = np.vstack([odds[:, [i]] for i in range(0, channel_count, 2)])
+    oddstack_r = np.vstack([odds[:, [i]] for i in range(1, channel_count, 2)])
+    evenstack = np.concatenate([evenstack_l, evenstack_r], axis=1)
+    oddstack = np.concatenate([oddstack_l, oddstack_r], axis=1)
+    datastack = np.concatenate([evenstack, oddstack], axis=0)
+
+    wavfile.write(outfile, sample_rate, np.int16(datastack * 2 ** 15))
+    return 0
+
+
+def auto_process(queue, vector_fn=None, processname='brainsound', checkpoint=None, verbose=False):
     basepath = os.path.dirname(queue[0])
-    soundpath = basepath + '/sound/'
+    soundpath = basepath + '/sound2/'
     if not (os.path.exists(soundpath)):
         os.mkdir(soundpath)
         print("Made path: {}".format(soundpath))
@@ -81,7 +120,7 @@ def auto_process(queue, verbose=False):
         #     sys.stdout.write('\r{} of {}: {}'.format(i, len(queue), path))
         #     sys.stdout.flush()
         try:
-            result = auralize(path, outpath=soundpath, verbose=verbose)
+            result = auralize2(path, outpath=soundpath, verbose=verbose)
 
         except Exception as exc:
             if verbose:

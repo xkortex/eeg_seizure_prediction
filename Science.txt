@@ -33,3 +33,25 @@ NOTE: Set up the output layer with a 2-vector,
 
 It is trivial to combine to a single value with Bayes' theorem, but this allows for much finer tuned control over False Positive vs False Negative errors. 
 The outputs are more diagnostic, like while (0.9, 0.2) is very likely not a seizure, (.5, .1) paints a different picture than (.9, .5). This can tell us that the network might be favorite one subnet over another. Just a trick the pros use a lot. 
+
+JOURNAL:
+
+11-19 1630 - Some mild success with the FFT on electrode with Convo LSTM on Subject 1 - .67 validation after 30 epochs
+
+____________________________________________________________________________________________________
+Layer (type)                     Output Shape          Param #     Connected to                     
+====================================================================================================
+convolution1d_7 (Convolution1D)  (None, 256, 64)       576         convolution1d_input_5[0][0]      
+____________________________________________________________________________________________________
+maxpooling1d_5 (MaxPooling1D)    (None, 128, 64)       0           convolution1d_7[0][0]            
+____________________________________________________________________________________________________
+lstm_5 (LSTM)                    (None, 100)           66000       maxpooling1d_5[0][0]             
+____________________________________________________________________________________________________
+dense_5 (Dense)                  (None, 2)             202         lstm_5[0][0]                     
+====================================================================================================
+Total params: 66778
+
+The autoencoder seems to be doing pretty well on the individual electrode sample set (combined training and test of LF/MFCC, single electrode per sample, downsampled to 256, z-normalized). Make sure to use the appropriate activation function - sigmoid in Keras only handles positive. Since freq data is all positive anyway, it may be better to do a normalization which keeps the vector totally positive. Probably just divide by sigma.
+
+Nope, tanh works a lot better than sigmoid, softplus, or relu
+

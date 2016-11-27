@@ -16,6 +16,14 @@ def vector_metric(data, verbose=False):
 
     return np.array([hurst, chanstd, ccmean, ccstd])
 
+def vector_metric_pow(data, verbose=False):
+    hurst = metrics.hurst(data)
+    chanstd = metrics.chanstd(data)
+    ccmean, ccstd = metrics.crosscorr_stat(data)
+
+    met = np.array([hurst, chanstd, ccmean, ccstd])
+
+
 def auto_process(queue, verbose=True):
     metric_ary = []
     namelist = []

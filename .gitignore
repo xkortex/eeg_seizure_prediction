@@ -4,6 +4,9 @@ data/*
 *.pyc
 *.mat
 *.npy
+*.tgz
+*.zip
+*.tar.gz
 
 #jetbrains
 *.idea
