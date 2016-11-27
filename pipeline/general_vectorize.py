@@ -40,7 +40,7 @@ def vector_fftsplit(data, verbose=False):
 def null_vector_fn(data, verbose=False):
     return np.array(0)
 
-def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, split=8, verbose=False):
+def auto_process(queue, vector_fn=None, vec_name='foo', checkpoint=10, split=1, verbose=False):
     if vector_fn is None:
         vector_fn = null_vector_fn
     notes = input("Please enter a note: ")

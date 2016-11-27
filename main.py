@@ -68,6 +68,7 @@ if __name__ == '__main__':
             #  '/media/mike/Elements/data/kaggle/melbourne/train_3/': None,
              '/run/media/mike/Elements/data/kaggle/melbourne/test_new': None,
              '/run/media/mike/Elements/data/kaggle/melbourne/train_all': None,
+             '/run/media/mike/Elements/data/kaggle/melbourne/train_1': None,
              '/home/mike/Downloads/test_new/': None,
              # 'X /home/mike/Downloads/test_1_new/': None,
              # 'X /home/mike/Downloads/test_2_new/': None,

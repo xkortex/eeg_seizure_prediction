@@ -23,7 +23,13 @@ def get_matlab_eeg_data_ary(path):
     return get_matlab_eeg_data(path)['data']
 
 def reload_with_labels(basename):
-    data = np.load(basename +'.npy')
+    if os.path.exists(basename +'.npy'):
+        data = np.load(basename +'.npy')
+    elif os.path.exists(basename + '.npz'):
+        data = np.load(basename + '.npz')['arr_0']
+    else:
+        raise IOError("No such file: {}".format(basename+ '.npy or .npz'))
+
     names = pd.read_csv(basename +'_name.csv')
     label = [os.path.basename(name)[:4]+'_'+name[-5] for name in names['path']]
     label_ary = []

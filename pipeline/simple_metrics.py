@@ -20,8 +20,13 @@ def vector_metric_pow(data, verbose=False):
     hurst = metrics.hurst(data)
     chanstd = metrics.chanstd(data)
     ccmean, ccstd = metrics.crosscorr_stat(data)
+    rms_powers = np.std(data, axis=0)
+    chanstd_pow = np.std(rms_powers)
+    chanmean_pow = np.mean(rms_powers)
+    met = np.array([hurst, chanstd, ccmean, ccstd, chanstd_pow, chanmean_pow])
 
-    met = np.array([hurst, chanstd, ccmean, ccstd])
+    vec = np.concatenate([rms_powers, met], axis=0)
+    return vec
 
 
 def auto_process(queue, verbose=True):

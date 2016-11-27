@@ -1,7 +1,18 @@
 import numpy as np
 
 
-def softclip(x, a=1):
+def softplus2(x, a=1):
+    return np.log(1+np.exp((x+1)*a))/a -1
+
+def softclip(x, a=1, b=1):
+    """
+
+    :param x: Data
+    :param a: Knee sharpness
+    :param b: Slope of linear region
+    :return:
+    """
+    x = x*b
     x_0 = np.log(1+np.exp((x+1)*a))/a -1# softplus(x, a)
     return -np.log(1+np.exp((-x_0+1)*a))/a +1
 
