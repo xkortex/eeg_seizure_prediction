@@ -20,6 +20,7 @@ from scipy.io import loadmat
 from sklearn.preprocessing import MinMaxScaler
 
 from ..dio import dataio
+from ..msignal import msignal
 
 try:
     # Allows other file formats, such as FLAC.
@@ -90,18 +91,25 @@ def auralize2(input_file, outpath=None, sample_rate=44100, thresh=.75, overwrite
             print('Dropout: {} - {}'.format(vc, input_file))
         return 1
     channel_count = data.shape[1]
-    # scale to [-1, 1], put all channels after each other
-    evens = data[:, 0::2]
-    odds = data[:, 1::2]
-    y = np.vstack([MinMaxScaler(feature_range=(-1, 1)).fit_transform(data[:, i:i+1]) for i in range(channel_count)])
+    scaled_data = msignal.norm_softclip(data, norm_by_chan=1)
 
-    save_audio(outfile, y, sample_rate)
+    evens = scaled_data[:, 0::2]
+    odds = scaled_data[:, 1::2]
+    evenstack_l = np.vstack([evens[:, [i]] for i in range(0, channel_count, 2)])
+    evenstack_r = np.vstack([evens[:, [i]] for i in range(1, channel_count, 2)])
+    oddstack_l = np.vstack([odds[:, [i]] for i in range(0, channel_count, 2)])
+    oddstack_r = np.vstack([odds[:, [i]] for i in range(1, channel_count, 2)])
+    evenstack = np.concatenate([evenstack_l, evenstack_r], axis=1)
+    oddstack = np.concatenate([oddstack_l, oddstack_r], axis=1)
+    datastack = np.concatenate([evenstack, oddstack], axis=0)
+
+    wavfile.write(outfile, sample_rate, np.int16(datastack * 2 ** 15))
     return 0
 
 
 def auto_process(queue, vector_fn=None, processname='brainsound', checkpoint=None, verbose=False):
     basepath = os.path.dirname(queue[0])
-    soundpath = basepath + '/sound/'
+    soundpath = basepath + '/sound2/'
     if not (os.path.exists(soundpath)):
         os.mkdir(soundpath)
         print("Made path: {}".format(soundpath))
@@ -112,7 +120,7 @@ def auto_process(queue, vector_fn=None, processname='brainsound', checkpoint=Non
         #     sys.stdout.write('\r{} of {}: {}'.format(i, len(queue), path))
         #     sys.stdout.flush()
         try:
-            result = auralize(path, outpath=soundpath, verbose=verbose)
+            result = auralize2(path, outpath=soundpath, verbose=verbose)
 
         except Exception as exc:
             if verbose:
