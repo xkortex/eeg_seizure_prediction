@@ -9,7 +9,7 @@ nb_epoch = 500
 
 model = Sequential()
 
-model.add(Convolution1D(128, 3, border_mode='same', input_dim=6, input_length=256))
+model.add(Convolution1D(128, 3, border_mode='same', input_dim=16, input_length=256))
 model.add(Convolution1D(128, 3, border_mode='same'))
 model.add(MaxPooling1D(pool_length=2))
 
