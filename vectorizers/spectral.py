@@ -3,13 +3,13 @@ import os
 import numpy as np
 from scipy import fftpack, signal, interpolate
 #import matplotlib.pyplot as plt # I was just using this, not sure why it's breaking now
-#import matplotlib
+import matplotlib, matplotlib.pyplot
 from ..dio import dataio
-from ..msignal import auxfilter
+from ..msignal import auxfilter, msig
 
 
 def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
-                  cutoff=40,  # hard cutoff frequency
+                  cutoff=200,  # hard cutoff frequency
                   fs=400,  # sample frequency of input signal
                   takeLog=True,  # take log of freq spectrum
                   avgChan=False,  # take average across all channels
@@ -41,7 +41,8 @@ def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
     # plt.plot(rs_t, rs_spectrum)
     return rs_spectrum
 
-def ridiculous_log_transform(data, ndim=1024, fs=400, smoothing_cutoff=1, hard_cutoff=100, log_low_cut=-5):
+def ridiculous_log_transform(data, ndim=1024, fs=400, down=30, smoothing_cutoff=1, hard_cutoff=200, log_low_cut=-2.32,
+                             prenormalize=True):
     """
     This function returns a distorted version (x-axis log-transformed) of the fourier transform of the signal.
     My hope is with this approach is that it results in a more normally-distributed looking vector, which should lead
@@ -55,19 +56,21 @@ def ridiculous_log_transform(data, ndim=1024, fs=400, smoothing_cutoff=1, hard_c
     :param log_low_cut: Sets how much to include very low frequency components
     :return:
     """
+    if prenormalize:
+        data = msig.norm_softclip(data)
     # FFT and magnitude
     ftsig = fftpack.fft(data, axis=0)
     ftsig_a = np.abs(ftsig[:len(ftsig)*hard_cutoff//fs])
     # Smooth it with low pass and downsample. Low pass may not be necessary since resample does appropriate
     # pre-filtering
-    ftsig_f = auxfilter.butterfilt(ftsig_a, smoothing_cutoff, fs)
-    ftsig_r = signal.resample(ftsig_f, ndim)
+    ftsig_r = signal.resample_poly(ftsig_a, 1, down, axis=0)
 
     # Ok, now the weird bit. Take the existing x-domain and create an interpolation image of it
-    t_rs = np.linspace(0.0001, hard_cutoff, ndim)
+    t_rs = np.linspace(0.0001, hard_cutoff, len(ftsig_r))
     fn_ftsig_rs = interpolate.Akima1DInterpolator(t_rs, ftsig_r)
     # And now map an exponential domain, thereby creating a higher density of points around the main freq
-    log_ftsig = fn_ftsig_rs(np.exp(np.linspace(log_low_cut, np.log(hard_cutoff), ndim)))
+    x_basis = np.linspace(log_low_cut, np.log2(hard_cutoff), ndim)
+    log_ftsig = fn_ftsig_rs(np.power(2, x_basis))
     return log_ftsig
 
 def freq_log_transform(ftsig, fs=400, smoothing_cutoff=1, hard_cutoff=100, log_low_cut=-5):
@@ -85,7 +88,6 @@ def freq_log_transform(ftsig, fs=400, smoothing_cutoff=1, hard_cutoff=100, log_l
     # And now map an exponential domain, thereby creating a higher density of points around the main freq
     log_ftsig = fn_ftsig_rs(np.exp(np.linspace(log_low_cut, np.log(hard_cutoff), hard_cutoff)))
     return log_ftsig
-
 
 def spectrogram(rawdata, nchunk=256,
                 windowStep=4,  # subdivide the chunk size in order to get a rolling window
@@ -141,7 +143,7 @@ def path_to_picname(path):
 
 def spec_to_fig(spec, filename=None, cutoff=100, length=600):
     data = np.average(spec[:,:], axis=2).T
-    plt.imshow(data, origin='lower', extent=[0, length, 0, cutoff])
+    matplotlib.pyplot.imshow(data, origin='lower', extent=[0, length, 0, cutoff])
     if filename is not None:
         plt.savefig(filename)
         plt.close()
@@ -155,6 +157,11 @@ def file_to_fig(path, nchunk=256, windowStep=4, savefile=False, returnspec=False
     spec_to_fig(spec, filename=picname)
     if returnspec:
         return spec
+
+
+def vec_spectrogram(data, verbose=False):
+    spectrogram(data)
+
 
 def plt_16x(plt, spec, npow=1):
     """

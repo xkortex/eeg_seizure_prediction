@@ -20,7 +20,7 @@ from scipy.io import loadmat
 from sklearn.preprocessing import MinMaxScaler
 
 from ..dio import dataio
-from ..msignal import msignal
+from ..msignal import msig
 
 
 class NotReallyAnError(RuntimeError):
@@ -105,7 +105,7 @@ def auralize2(input_file, outpath=None, sample_rate=44100, thresh=.75, overwrite
             print('Dropout: {} - {}'.format(vc, input_file))
         return 1
     channel_count = data.shape[1] // 2
-    scaled_data = msignal.norm_softclip(data, norm_by_chan=1)
+    scaled_data = msig.norm_softclip(data, norm_by_chan=1)
 
     evens = scaled_data[:, 0::2]
     odds = scaled_data[:, 1::2]
@@ -162,7 +162,7 @@ def auralize_seq(input_file, outpath=None, sample_rate=44100, thresh=.75, overwr
             print('Dropout: {} - {}'.format(vc, input_file))
         return 1
     channel_count = data.shape[1] // 2
-    scaled_data = msignal.norm_softclip(data, norm_by_chan=1)
+    scaled_data = msig.norm_softclip(data, norm_by_chan=1)
 
     evens = scaled_data[:, 0::2]
     odds = scaled_data[:, 1::2]

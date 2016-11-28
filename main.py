@@ -7,6 +7,7 @@ from pipeline import switchboard
 from tools import menu
 
 
+
 def set_arg_parser():
     parser = argparse.ArgumentParser(description='Process eeg data. See docs/main.txt for more info')
     parser.add_argument('infile', type=str, nargs='?',
@@ -25,9 +26,9 @@ def set_arg_parser():
                         help="Load ALL available files into the queue, up to 99,999,999")
 
     parser.add_argument("-p", "--pathmenu", action="store_true",
-                        help="select path from menu")
-    parser.add_argument("-P", "--pickpath", type=int, choices=list(range(20)), default=0,
-                        help="Pick target path")
+                        help="Pick path from menu")
+    parser.add_argument("-m", "--pickvector", action='store_true',
+                        help="Pick vectorizer from menu")
     parser.add_argument("-s", "--specify", type=str, default=None,
                         help="Specify a specific algo")
     parser.add_argument("-xp", "--checkpoint", type=int, default=10,
@@ -77,10 +78,15 @@ if __name__ == '__main__':
              '/run/media/mike/Elements/data/kaggle/upenn/clips/Patient_1': None,
 }
 
+    processname = None
     mymenu = menu.MenuPicker(paths)
+    vecmenu = menu.MenuPicker(switchboard.process_vecs)
     if args.pathmenu:
         args.infile = mymenu.user_pick_menu()
     print('Selection: ', args.infile)
+
+    if args.pickvector:
+        args.specify = vecmenu.user_pick_menu()
 
     if args.infile is None:
         # raise ValueError("No input file specified")
@@ -94,7 +100,6 @@ if __name__ == '__main__':
     queue = glob.glob(args.infile + '/*.mat')
 
     # actual stuff
-    processname = None
     if args.specify is not None:
         processname = args.specify
     elif args.simplemetric:
