@@ -13,7 +13,7 @@ class MenuPicker(object):
         for key, value in self.choicedict.items():
             if isinstance(value, dict):
                 marker = '+'
-                keystruct.update({i: {}})
+                keystruct.update({i: value})
 
             else:
                 marker = '.'
@@ -29,6 +29,12 @@ class MenuPicker(object):
         if reply == '' or reply == '0' or reply is None:
             print('Quitting')
             return None
+        reply = int(reply)
+        print(keystruct[reply])
+        print('------')
+        if isinstance(keystruct[reply], dict):
+            submenu= MenuPicker(keystruct[reply])
+            return submenu.user_pick_menu()
         else:
             return keystruct[int(reply)]
 

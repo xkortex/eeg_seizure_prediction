@@ -31,6 +31,7 @@ def queue_auto_process(queue, vector_fn=None, processname=None, checkpoint=None,
 
 
 def run_a_process(processname, queue, checkpoint=10, verbose=False):
+    split=1
     if processname is None:
         raise ValueError("No valid process selected")
     vector_fn = None
@@ -53,4 +54,7 @@ def run_a_process(processname, queue, checkpoint=10, verbose=False):
     else:
         raise ValueError("Invalid process: {}".format(processname))
 
-    results = auto_process(queue, vector_fn, processname, checkpoint=checkpoint, verbose=verbose)
+    if processname == 'fftsplit':
+        split=8
+
+    results = auto_process(queue, vector_fn, processname, checkpoint=checkpoint, split=split, verbose=verbose)

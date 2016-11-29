@@ -62,6 +62,9 @@ if __name__ == '__main__':
     args = parser.parse_args()
     dataErrors = True if not args.nodataerror else False # invert because this is a default-on state
 
+    subpath1 = '/run/media/mike/Elements/data/kaggle/upenn/seizure-detection/seizure-data/'
+    subpath2 = '/run/media/mike/Elements/data/kaggle/dog/'
+
     paths = {'/home/mike/data/minidata/': None,
             # '/media/mike/Elements/data/kaggle/melbourne/train_all/': None,
             #  '/media/mike/Elements/data/kaggle/melbourne/train_1/': None,
@@ -75,7 +78,8 @@ if __name__ == '__main__':
              # 'X /home/mike/Downloads/test_2_new/': None,
              # 'X /home/mike/Downloads/test_3_new/': None,
              '/home/mike/data/train/': None,
-             '/run/media/mike/Elements/data/kaggle/upenn/clips/Patient_1': None,
+             subpath1: {path: None for path in glob.glob(subpath1+'*')},
+             subpath2: {path: None for path in glob.glob(subpath2 + '*')},
 }
 
     processname = None

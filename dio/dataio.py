@@ -66,7 +66,7 @@ def separate_sets(data_vec, label_ary):
 
 def dump_data(vec_ary, name_ary, meta, filename, basedir, catchIOError=True):
     def dump(name_ary, meta, filename, basedir):
-        name_ary = pd.DataFrame(name_ary, columns=['path'])
+        name_ary = pd.DataFrame(name_ary, columns=['path', 'valid_percent'])
         np.savez_compressed(basedir + '/' + filename, vec_ary)
         name_ary.to_csv(basedir + '/' + filename + '_name.csv')
         with open(basedir + '/' + filename + '.json', 'w') as jfile:
