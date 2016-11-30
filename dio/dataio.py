@@ -33,19 +33,28 @@ def reload_with_labels(basename):
     else:
         raise IOError("No such file: {}".format(basename+ '.npy or .npz'))
 
-    names = pd.read_csv(basename +'_name.csv')
-    label = [os.path.basename(name)[:4]+'_'+name[-5] for name in names['path']]
+    data = np.nan_to_num(np.array(data, float))
+    data_vec = data.reshape(data.shape[0], -1)
+    try:
+        label_ary = load_label_ary(basename)
+    except FileNotFoundError:
+        print('WARNING: No label file found!! Returning None for label array')
+        return (data_vec, None)
+
+    assert data_vec.shape[0] == label_ary.shape[0], "Shape mismatch with data and label"
+    return (data_vec, label_ary)
+
+def load_label_ary(basename):
+    names = pd.read_csv(basename + '_name.csv')
+    label = [os.path.basename(name)[:4] + '_' + name[-5] for name in names['path']]
     label_ary = []
     for lab in label:
         if lab[:3] == 'new':
             label_ary.append(-1)
         else:
             label_ary.append(int(lab[-1]))
-    label_ary = np.array(label_ary).reshape(-1,1)
-    data = np.nan_to_num(np.array(data, float))
-    data_vec = data.reshape(data.shape[0],-1)
-    assert data_vec.shape[0] == label_ary.shape[0], "Shape mismatch with data and label"
-    return (data_vec, label_ary)
+    return np.array(label_ary).reshape(-1, 1)
+
 
 
 def separate_sets(data_vec, label_ary):
@@ -58,7 +67,7 @@ def separate_sets(data_vec, label_ary):
     # df = pd.DataFrame(data_vec)
     # df['label'] = pd.Series(label_ary)
     """This part currently breaks on 3D arrays"""
-    if label_ary.shape >= 1:
+    if label_ary.ndim >= 1:
         if label_ary.shape[1] >= 1:
             label_ary = label_ary[:,0]
     d0 = data_vec[np.where(label_ary.ravel() == 0)[0], :]
