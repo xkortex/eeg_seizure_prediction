@@ -6,17 +6,21 @@ import tqdm
 import time
 from io import StringIO
 from subprocess import Popen, PIPE
+import scipy.signal as signal
 
 
 from ..dio import dataio
 from ..vectorizers import spectral
 
-def sampen_chan(channeldata, verbose=False):
+def sampen_chan(channeldata, max_npts_j=100, maxepoch=2, verbose=False):
     spool = []
     for i in range(len(channeldata)):
         spool.append('{}'.format(channeldata[i]))
     stream = '\n'.join(spool)
-    cproc = Popen("SampEn/sampen13_1k.o", stdin=PIPE, stdout=PIPE)
+    argsend = None#" -j {} -m {}".format(max_npts_j, maxepoch)
+    efile = "sampen_j0_1k.o"
+    command = "SampEn/{}".format(efile)
+    cproc = Popen(command, stdin=PIPE, stdout=PIPE)
     out, err = cproc.communicate(stream)
     if err: print(err)
     if verbose: print('OUT: ', out)
@@ -25,13 +29,14 @@ def sampen_chan(channeldata, verbose=False):
 
     return outdata
 
-def sampen_eeg(data, verbose=False):
+def sampen_eeg(data, down=4, verbose=False):
     sampen = []
+    if down != 1:
+        data = signal.resample_poly(data, 1, down, axis=0)
     for chan in range(16):
         outdata = sampen_chan(data[:,chan], verbose=verbose)
         sampen.append(outdata)
     return np.array(sampen)
-
 
 
 

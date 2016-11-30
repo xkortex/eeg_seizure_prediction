@@ -23,6 +23,9 @@ def get_matlab_eeg_data_ary(path):
     return get_matlab_eeg_data(path)['data']
 
 def reload_with_labels(basename):
+    if basename.split('.')[-1] == 'npy' or basename.split('.')[-1] == 'npz':
+        data = np.load(basename)
+        basename = basename[:-4]
     if os.path.exists(basename +'.npy'):
         data = np.load(basename +'.npy')
     elif os.path.exists(basename + '.npz'):
