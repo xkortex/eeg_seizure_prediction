@@ -8,6 +8,8 @@ from ..dio import dataio
 from ..msignal import auxfilter, msig
 
 
+
+
 def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
                   cutoff=200,  # hard cutoff frequency
                   fs=400,  # sample frequency of input signal
@@ -42,7 +44,7 @@ def vectorize_fft(rawdata, ndim=800,  # number of vector dimensions to output
     return rs_spectrum
 
 def ridiculous_log_transform(data, ndim=1024, fs=400, down=30, smoothing_cutoff=1, hard_cutoff=200, log_low_cut=-2.32,
-                             prenormalize=True):
+                             prenormalize=True, useEnvelope=True):
     """
     This function returns a distorted version (x-axis log-transformed) of the fourier transform of the signal.
     My hope is with this approach is that it results in a more normally-distributed looking vector, which should lead
@@ -58,6 +60,10 @@ def ridiculous_log_transform(data, ndim=1024, fs=400, down=30, smoothing_cutoff=
     """
     if prenormalize:
         data = msig.norm_softclip(data)
+
+    if useEnvelope:
+        data = msig.envelope(data)
+
     # FFT and magnitude
     ftsig = fftpack.fft(data, axis=0)
     ftsig_a = np.abs(ftsig[:len(ftsig)*hard_cutoff//fs])

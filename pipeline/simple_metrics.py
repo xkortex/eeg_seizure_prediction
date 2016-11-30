@@ -6,17 +6,21 @@ import time
 
 from ..dio import dataio
 from ..vectorizers import naive
-from ..msignal import metrics
+from ..msignal import metrics, msig
 
 
-def vector_metric(data, verbose=False):
+def vector_metric(data, useEnvelope=True, verbose=False):
+    if useEnvelope:
+        data = msig.envelope(data)
     hurst = metrics.hurst(data)
     chanstd = metrics.chanstd(data)
     ccmean, ccstd = metrics.crosscorr_stat(data)
 
     return np.array([hurst, chanstd, ccmean, ccstd])
 
-def vector_metric_pow(data, verbose=False):
+def vector_metric_pow(data, useEnvelope=True, verbose=False):
+    if useEnvelope:
+        data = msig.envelope(data)
     hurst = metrics.hurst(data)
     chanstd = metrics.chanstd(data)
     ccmean, ccstd = metrics.crosscorr_stat(data)

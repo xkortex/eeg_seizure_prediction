@@ -1,8 +1,13 @@
 import numpy as np
+import scipy.signal as signal
 
 
 def softplus2(x, a=1):
     return np.log(1+np.exp((x+1)*a))/a -1
+
+def envelope(data):
+    siga = signal.hilbert(data, axis=0)
+    return np.abs(siga)
 
 def softclip(x, a=1, b=1):
     """
