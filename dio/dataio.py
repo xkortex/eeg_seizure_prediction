@@ -210,7 +210,7 @@ def shuffle_split_with_label(data, labels, resample='down', seed=1337):
     y0, y1 = labels[:len(d0)], labels[len(d0):]
     # print('d0 {} d1 {} y0 {} y1 {}'.format(d0.shape, d1.shape, y0.shape, y1.shape))
 
-    assert len(d0) >= len(d1), 'must have more 0 than 1 classes'
+    # assert len(d0) >= len(d1), 'must have more 0 than 1 classes'
     if resample == 'down':
         np.random.seed(seed)
         np.random.shuffle(d0)
@@ -252,3 +252,28 @@ def respool_electrodes(data, nchan=16):
             #         newdata.append(np.array(newframe).ravel())
 
     return np.asarray(newdata).reshape(ndata // nchan, -1)
+
+class NormOMatic(object):
+    def __init__(self, centerMode='mean', disperseMode='std', mu=0.0, sigma=1.0, verbose=1):
+        self._mu = 0  # center point
+        self._sigma = 1# stdDev/ dispersion
+        self._centerMode = centerMode
+        self._disperseMode = disperseMode
+
+    def fit(self, X, Y=None):
+        if self._centerMode == 'mean':
+            self._mu = np.mean(X, axis=0)
+        elif self._centerMode[:3] == 'med':
+            self._mu = np.median(X, axis=0)
+        else:
+            raise ValueError("Invalid mode specifier: {}".format(self._centerMode))
+
+        if self._disperseMode[:3] == 'std':
+            self._sigma = np.std(X, axis=0)
+        elif self._disperseMode[:3] == 'var':
+            self._sigma = np.var(X, axis=0)
+        elif self._disperseMode[:3] == 'mad':
+            self._sigma = np.mean(np.abs(X - np.mean(X, 0)), 0)
+        else:
+            raise ValueError("Invalid mode specifier: {}".format(self._disperseMode))
+
