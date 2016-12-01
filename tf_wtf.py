@@ -39,8 +39,11 @@ class QuasiRobustScaler(object):
         
 
 def preprocess_wtf(data_train, data_test, Y, start=0, subdiv=64, renorm=True, random_state=None, verbose=0):
+    ## SOMETHING IN THIS METHOD IS MUTATING Y.
     simple_dtrain = janky_subdiv(data_train, start=start)
     simple_dtest = janky_subdiv(data_test, start=2)
+    if verbose >= 2: print('Shape after jankifier: ', simple_dtrain.shape)
+
 
     # homemade scaler
     if renorm:
@@ -50,8 +53,8 @@ def preprocess_wtf(data_train, data_test, Y, start=0, subdiv=64, renorm=True, ra
         simple_dtest = normo.transform(simple_dtest)
 
 
-    if verbose >= 2: print(simple_dtrain.shape, simple_dtest.shape)
     if verbose >= 2: print(np.mean(simple_dtrain))
+    if verbose >= 2: print('These should match', simple_dtrain.shape, Y.shape)
 
     dtrain_set = np.concatenate([simple_dtrain, Y], axis=1)
     dframe = pd.DataFrame(dtrain_set)
@@ -85,15 +88,14 @@ def preprocess_wtf(data_train, data_test, Y, start=0, subdiv=64, renorm=True, ra
     if verbose >= 2: print(np.mean(simple_dtrain_lab[:nhit]))
 
     X = simple_dtrain
-    Y = simple_dtrain_lab
+    Y_new = simple_dtrain_lab
 
     G = simple_dtest
-    return X, Y, G
+    return X, Y_new, G
 
-# def ensemble_classifier(X, Y, G, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
-def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
-
-    X, Y, G = preprocess_wtf(data_train, data_test, Y, start=i, subdiv=K, random_state=None)
+def ensemble_classifier(X, Y, G, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
+# def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
+#     X, Y, G = preprocess_wtf(data_train, data_test, Y, start=start, subdiv=subdiv, random_state=random_state, verbose=verbose)
 
     perc = lm.Perceptron()
 
@@ -107,7 +109,6 @@ def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_sta
     assert 0.4 < balance_y1 < 0.6, "Labels are unbalanced"
     assert 0.4 < balance_y2 < 0.6, "Labels are unbalanced"
 
-    if verbose >= 2: print()
     if verbose >= 2: print(X1.shape, Y1.shape, G0.shape, )
     if verbose >= 2: print(np.mean(X,), np.mean(X), np.std(X, ), np.std(X, ), )
     if verbose >= 2: print(np.mean(X1,), np.mean(X2), np.std(X1, ), np.std(X2, ), )
@@ -117,7 +118,7 @@ def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_sta
 
     # In[354]:
 
-    if verbose >= 2: print( perc.score(Xv[:,:cut:sl], Yv), np.mean(Yv, axis=0))
+    if verbose >= 2: print('Score on total set', perc.score(X[:,:cut:sl], Y), np.mean(Y, axis=0))
 
 
     # In[355]:
@@ -160,7 +161,6 @@ if __name__ == '__main__':
     # In[226]:
 
     name_mask = names_train['label'] == 0
-    Y = np.vstack([name_mask, ~name_mask]).T # label vector will be (N, S), N hot for 'no seiz', S hot for 'seize'
 
     # normo = dataio.NormOMatic(centerMode='med', normGlobal=True)
     # normo.fit(simple_dtrain)
@@ -169,6 +169,15 @@ if __name__ == '__main__':
     K = 64
     models = []
     for i in range(K):
+        # Yz = np.copy(Y)
+        Y = np.vstack([name_mask, ~name_mask]).T  # hack to regenerate Y
 
-        models.append(ensemble_classifier(data_train, data_test, Y, start=i, subdiv=K, verbose=verbose))
+        # print('Important: ', data_train.shape, data_test.shape, Y.shape)
+        X, Y2, G = preprocess_wtf(data_train, data_test, Y, start=i, subdiv=K, random_state=None, verbose=verbose)
+        # classer = ensemble_classifier(data_train, data_test, Y, start=i, subdiv=K, verbose=verbose)
+        # Y = np.vstack([name_mask, ~name_mask]).T  # hack to regenerate Y
+
+        classer = ensemble_classifier(X, Y2, G, start=i, subdiv=K, verbose=verbose)
+
+        # models.append(classer)
 
