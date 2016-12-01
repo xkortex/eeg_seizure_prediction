@@ -38,14 +38,7 @@ class QuasiRobustScaler(object):
         pass
         
 
-
-
-
-def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
-
-    # name_mask1 = ~name_mask  # not necessary, I just goof'd
-    # print(name_mask.shape, name_mask.mean())
-
+def preprocess_wtf(data_train, data_test, Y, start=0, subdiv=64, renorm=True, random_state=None, verbose=0):
     simple_dtrain = janky_subdiv(data_train, start=start)
     simple_dtest = janky_subdiv(data_test, start=2)
 
@@ -56,25 +49,22 @@ def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_sta
         simple_dtrain = normo.transform(simple_dtrain)
         simple_dtest = normo.transform(simple_dtest)
 
-    # normo = preproc.RobustScaler()
 
     if verbose >= 2: print(simple_dtrain.shape, simple_dtest.shape)
     if verbose >= 2: print(np.mean(simple_dtrain))
 
     dtrain_set = np.concatenate([simple_dtrain, Y], axis=1)
-
     dframe = pd.DataFrame(dtrain_set)
 
-    d0 = dframe[dframe.iloc[:,-1] == 0]
-    d1 = dframe[dframe.iloc[:,-1] == 1]
+    d0 = dframe[dframe.iloc[:, -1] == 0]
+    d1 = dframe[dframe.iloc[:, -1] == 1]
     if verbose >= 2: print(d0.shape, d1.shape)
     nfalse, nhit = d0.shape[0], d1.shape[0]
 
     # randomly picks the zero datas... i think. the continuity may be essential
-    offset = np.random.randint(0, nfalse-nhit-1)
-    d0b = d0[offset:offset+nhit]
+    offset = np.random.randint(0, nfalse - nhit - 1)
+    d0b = d0[offset:offset + nhit]
     if verbose >= 2: print(d0b.shape)
-
 
     # In[342]:
 
@@ -82,32 +72,28 @@ def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_sta
     d1_ = d1.as_matrix()
 
     # ### Shuffle and shit
-    subdiv_vec =1
+    subdiv_vec = 1
     new_set = np.concatenate([d0b_, d1_], axis=0)
-    if verbose >= 2: print('new_set:',new_set.shape)
+    if verbose >= 2: print('new_set:', new_set.shape)
     np.random.seed(random_state)
     np.random.shuffle(new_set)
-    if verbose >= 2: print(np.mean(new_set[:nhit,-1]))
-    simple_dtrain= new_set[:,:-2]
-    simple_dtrain_lab = new_set[:,-1]
-    simple_dtrain = simple_dtrain[:,::subdiv_vec]
+    if verbose >= 2: print(np.mean(new_set[:nhit, -1]))
+    simple_dtrain = new_set[:, :-2]
+    simple_dtrain_lab = new_set[:, -1]
+    simple_dtrain = simple_dtrain[:, ::subdiv_vec]
     if verbose >= 2: print(simple_dtrain.shape)
     if verbose >= 2: print(np.mean(simple_dtrain_lab[:nhit]))
 
-    # In[346]:
+    X = simple_dtrain
+    Y = simple_dtrain_lab
 
-    # Parition the data into training and evaluation sets
-    partition = 3*simple_dtrain.shape[0] // 4
-    if verbose >= 2: print(partition)
-    if verbose >= 2: print('simple_dtrain:', simple_dtrain.shape)
-    X=simple_dtrain[:partition]
-    Y=simple_dtrain_lab[:partition]
-    Xv=simple_dtrain[partition:]
-    Yv=simple_dtrain_lab[partition:]
-    G=simple_dtest
+    G = simple_dtest
+    return X, Y, G
 
-    if verbose >= 2: print(Y.shape, np.mean(Y), np.mean(Yv))
-    if verbose >= 2: print(X.shape, Y.shape, Xv.shape, Yv.shape)
+# def ensemble_classifier(X, Y, G, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
+def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
+
+    X, Y, G = preprocess_wtf(data_train, data_test, Y, start=i, subdiv=K, random_state=None)
 
     perc = lm.Perceptron()
 
@@ -117,11 +103,13 @@ def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_sta
     X1, Y1 = X[::kf,:cut:sl], Y[::kf]
     X2, Y2 = X[1::kf,:cut:sl], Y[1::kf]
     G0 = G[:, :cut:sl]
+    balance_y1, balance_y2 = np.mean(Y1, axis=0), np.mean(Y2, axis=0)
+    assert 0.4 < balance_y1 < 0.6, "Labels are unbalanced"
+    assert 0.4 < balance_y2 < 0.6, "Labels are unbalanced"
 
-
-
-    if verbose >= 2: print(X1.shape, Y1.shape, G0.shape, np.mean(Y, axis=0))
-    if verbose >= 2: print(np.mean(X,), np.mean(Xv), np.std(Xv, ), np.std(Xv, ), )
+    if verbose >= 2: print()
+    if verbose >= 2: print(X1.shape, Y1.shape, G0.shape, )
+    if verbose >= 2: print(np.mean(X,), np.mean(X), np.std(X, ), np.std(X, ), )
     if verbose >= 2: print(np.mean(X1,), np.mean(X2), np.std(X1, ), np.std(X2, ), )
 
     perc.fit(X1, Y1)
@@ -134,8 +122,8 @@ def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_sta
 
     # In[355]:
 
-    if verbose >= 2: print( perc.score(X1, Y1), np.mean(Yv, axis=0))
-    if verbose >= 2: print( perc.score(X2, Y2), np.mean(Yv, axis=0))
+    if verbose >= 2: print( perc.score(X1, Y1), np.mean(Y, axis=0))
+    if verbose >= 2: print( perc.score(X2, Y2), np.mean(Y, axis=0))
 
 
     pr = perc.predict(X2)
@@ -181,4 +169,6 @@ if __name__ == '__main__':
     K = 64
     models = []
     for i in range(K):
+
         models.append(ensemble_classifier(data_train, data_test, Y, start=i, subdiv=K, verbose=verbose))
+
