@@ -26,10 +26,10 @@ def janky_subdiv(data, start=0, subdiv=64, chanVecSize=1024, nChan=16):
     if data.ndim == 3:
         return data[:,start::subdiv,:].reshape(-1,chanVecSize*nChan//subdiv)
     elif data.ndim == 2:
-        raise NotImplementedError('dont use this')
+        # raise NotImplementedError('dont use this')
         return data[:,start::subdiv]
     else:
-        raise NotImplementedError("d'oh!")
+        raise NotImplementedError("d'oh! input is totally wrong shape")
         
 class QuasiRobustScaler(object):
     def __init__(self, X=None, Y=None, normGlobal=True):
@@ -39,8 +39,11 @@ class QuasiRobustScaler(object):
         
 
 def preprocess_wtf(data_train, data_test, Y, start=0, subdiv=64, renorm=True, random_state=None, verbose=0):
+    if verbose >= 2: print('shapes into preproc', data_train.shape, Y.shape)
+
     ## SOMETHING IN THIS METHOD IS MUTATING Y.
-    simple_dtrain = janky_subdiv(data_train, start=start)
+    data_train2 = dataio.respool_electrodes(data_train)
+    simple_dtrain = janky_subdiv(data_train2, start=start)
     simple_dtest = janky_subdiv(data_test, start=2)
     if verbose >= 2: print('Shape after jankifier: ', simple_dtrain.shape)
 
@@ -103,9 +106,13 @@ def sketchy_balancer(X, Y, cut=256, sl=1, kf=2, validation_split=0.2, assertion_
     return X1, Y1, X2, Y2
 
 def ensemble_classifier(X, Y, start=0, subdiv=64, validation_split=0.20, random_state=None, renorm=True, verbose=0):
+    print('shapes into classifier', X.shape, Y.shape)
+    X1, Y1, X2, Y2 = sketchy_balancer(X, Y, validation_split=.2)
+    # strat = dataio.UnbalancedStratifier(X, Y, 1)
+    # dataset = strat.dataset_list()
+    # print(type(dataset[0]))
+    # (X1, Y1), (X2, Y2) = dataset[0]
 
-
-    X1, Y1, X2, Y2 = sketchy_balancer(X, Y)
     if verbose >= 2: print(X1.shape, Y1.shape, )
     if verbose >= 2: print(np.mean(X,), np.mean(X), np.std(X, ), np.std(X, ), )
     if verbose >= 2: print(np.mean(X1,), np.mean(X2), np.std(X1, ), np.std(X2, ), )
@@ -117,7 +124,7 @@ def ensemble_classifier(X, Y, start=0, subdiv=64, validation_split=0.20, random_
     if verbose >= 2: print( perc.score(X2, Y2), np.mean(Y, axis=0))
 
     pr = perc.predict(X2)
-    if verbose >= 2: print('Expected: 0.5:',pr.mean())
+    if verbose >= 1: print('Expected 0.5: {:.3f}'.format(pr.mean()))
 
     if verbose >= 1: print('VALIDATION {:2}: {:.2f} %'.format(start, 100*np.mean(pr == Y2)))
     return perc
@@ -175,4 +182,4 @@ def ensembleOMatic(verbose=1, K=64):
 
 
 if __name__ == '__main__':
-    probs = ensembleOMatic()
+    probs = ensembleOMatic(1)

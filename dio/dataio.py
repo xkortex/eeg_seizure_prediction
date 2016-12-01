@@ -239,16 +239,24 @@ def deinterleave(data, nchan=16):
     :param nchan:
     :return:
     """
+    vecdim = data.shape[1]
+    newvecdim = vecdim*nchan
+    newdata = np.zeros((len(data), newvecdim))
+    for i in range(0, len(data)):
+        for ch in range(0, nchan):
+            newdata[i,ch*vecdim:(ch+1)*vecdim] = data[i,:,ch]
+
+    return np.asarray(newdata)
 
 
 def respool_electrodes(data, nchan=16):
     ndata, ndim = data.shape
     newdata = np.zeros((ndata // nchan, nchan, ndim))
     for i in range(0, len(data), nchan):
-        for j in range(0, nchan):
-            #             newframe.append(data[j])
+        for ch in range(0, nchan):
+            #             newframe.append(data[ch])
             k = i // nchan
-            newdata[k][j] = data[i + j]
+            newdata[k][ch] = data[i + ch]
             #         newdata.append(np.array(newframe).ravel())
 
     return np.asarray(newdata).reshape(ndata // nchan, -1)
@@ -308,7 +316,7 @@ class UnbalancedStratifier(object):
     def feed(self, X, Y, preshuffle=True):
         self.X = X # this prolly adds memory bloat, oh well
         self.d0, self.d1, self.dt = separate_sets(X, Y)
-        self.zeros_bias = len(self.d1) < len(self.d0)
+        self.zeros_bias = len(self.d1) <= len(self.d0)
         if self.mandateZerosExcess and not self.zeros_bias:
             raise ValueError("Fix this for extensibility later!!!")
         if preshuffle:
@@ -328,8 +336,11 @@ class UnbalancedStratifier(object):
         print('d0  mean/std: {:4.4} {:4.4}'.format(np.mean(self.d0), np.std(self.d0)))
         print('d1  mean/std: {:4.4} {:4.4}'.format(np.mean(self.d1), np.std(self.d1)))
 
+    def dataset_list(self):
+        datasets = [d for d in self.gen_dataset()]
+        return datasets
 
-    def gimme(self):
+    def gen_dataset(self):
         jcut = len(self.d0) // self.nFolds
         kcut = len(self.d1) // self.nFolds
         for i in range(self.nFolds):
