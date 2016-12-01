@@ -93,21 +93,22 @@ def preprocess_wtf(data_train, data_test, Y, start=0, subdiv=64, renorm=True, ra
     G = simple_dtest
     return X, Y_new, G
 
-def ensemble_classifier(X, Y, G, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
+def ensemble_classifier(X, Y, G, start=0, subdiv=64, validation_split=0.20, random_state=None, renorm=True, verbose=0):
 # def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
 #     X, Y, G = preprocess_wtf(data_train, data_test, Y, start=start, subdiv=subdiv, random_state=random_state, verbose=verbose)
-
+    assertion_cutoff = 0.2
     perc = lm.Perceptron()
 
-    cut = 250
+    cut = 256
     sl = 1
     kf = 2
-    X1, Y1 = X[::kf,:cut:sl], Y[::kf]
-    X2, Y2 = X[1::kf,:cut:sl], Y[1::kf]
+    val_idx = int((1-validation_split) * len(X))
+    X1, Y1 = X[:val_idx:kf,:cut:sl], Y[:val_idx:kf]
+    X2, Y2 = X[val_idx::kf,:cut:sl], Y[val_idx::kf]
     G0 = G[:, :cut:sl]
     balance_y1, balance_y2 = np.mean(Y1, axis=0), np.mean(Y2, axis=0)
-    assert 0.4 < balance_y1 < 0.6, "Labels are unbalanced"
-    assert 0.4 < balance_y2 < 0.6, "Labels are unbalanced"
+    assert 0.5-assertion_cutoff < balance_y1 < 0.5+assertion_cutoff, "Labels are unbalanced"
+    assert 0.5-assertion_cutoff < balance_y2 < 0.5+assertion_cutoff, "Labels are unbalanced"
 
     if verbose >= 2: print(X1.shape, Y1.shape, G0.shape, )
     if verbose >= 2: print(np.mean(X,), np.mean(X), np.std(X, ), np.std(X, ), )
@@ -134,8 +135,10 @@ def ensemble_classifier(X, Y, G, start=0, subdiv=64, random_state=None, renorm=T
     if verbose >= 1: print('VALIDATION {:2}: {:.2f} %'.format(start, 100*np.mean(pr == Y2)))
     return perc
 
-if __name__ == '__main__':
-    verbose = 1
+
+def ensembleOMatic(verbose=1):
+    K = 64 # subdiv of FFT
+
     # Data loading section
 
     # In[223]:
@@ -161,23 +164,39 @@ if __name__ == '__main__':
     # In[226]:
 
     name_mask = names_train['label'] == 0
+    Y = np.vstack([name_mask, ~name_mask]).T  # hack to regenerate Y
 
     # normo = dataio.NormOMatic(centerMode='med', normGlobal=True)
     # normo.fit(simple_dtrain)
     # simple_dtrain = normo.transform(simple_dtrain)
-    # simple_dtest = normo.transform(simple_dtest)
-    K = 64
+    # simple_dtest = normo.transform
+    X_val, Y_val, G_val = preprocess_wtf(data_train, data_test, Y, start=1, subdiv=K, random_state=None, verbose=verbose)
+
     models = []
+    guesses = []
     for i in range(K):
         # Yz = np.copy(Y)
         Y = np.vstack([name_mask, ~name_mask]).T  # hack to regenerate Y
 
-        # print('Important: ', data_train.shape, data_test.shape, Y.shape)
         X, Y2, G = preprocess_wtf(data_train, data_test, Y, start=i, subdiv=K, random_state=None, verbose=verbose)
-        # classer = ensemble_classifier(data_train, data_test, Y, start=i, subdiv=K, verbose=verbose)
-        # Y = np.vstack([name_mask, ~name_mask]).T  # hack to regenerate Y
 
+        # try:
         classer = ensemble_classifier(X, Y2, G, start=i, subdiv=K, verbose=verbose)
+        # except AssertionError:
+        #     classer = ensemble_classifier(X, Y2, G, start=i, subdiv=K, verbose=verbose)
+        pr_all = classer.predict(X_val)
+        guess = classer.predict(G)
+        # print('FULL VALID {:2}: {:.2f} %'.format(i, 100*np.mean(pr_all == Y2)))
 
-        # models.append(classer)
+        # models.append(classer, guesses)
+        guesses.append(guess)
 
+    guesses = np.array(guesses)
+    print(guesses.shape)
+    ensemble_prob = np.mean(guesses, axis=0)
+    print(ensemble_prob.shape)
+    return ensemble_prob
+
+
+if __name__ == '__main__':
+    probs = ensembleOMatic()
