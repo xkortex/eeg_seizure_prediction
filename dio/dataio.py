@@ -279,16 +279,19 @@ class NormOMatic(object):
 
 
 class UnbalancedStratifier(object):
-    def __init__(self, X=None, Y=None, nFolds=2, preshuffle=True, random_state=None):
+    def __init__(self, X=None, Y=None, nFolds=2, preshuffle=True, random_state=None, mandateZerosExcess=True):
+        self.mandateZerosExcess = mandateZerosExcess
         self.nFolds = nFolds
         self.random_state = random_state
         if X is not None and Y is not None:
             self.feed(X, Y, preshuffle=preshuffle)
 
     def feed(self, X, Y, preshuffle=True):
+        self.X = X # this prolly adds memory bloat, oh well
         self.d0, self.d1, self.dt = separate_sets(X, Y)
         self.zeros_bias = len(self.d1) < len(self.d0)
-        assert self.zeros_bias, "Fix this for extensibility later!!!"
+        if self.mandateZerosExcess and not self.zeros_bias:
+            raise ValueError("Fix this for extensibility later!!!")
         if preshuffle:
             np.random.seed(self.random_state)
             np.random.shuffle(self.d0)
@@ -296,11 +299,16 @@ class UnbalancedStratifier(object):
 
     def summary(self):
         print('Total Samples:', len(self.d0) + len(self.d1) + len(self.dt))
+        print('Shapes', self.d0[0].shape)
         print('Class 0:', len(self.d0))
         print('Class 1:', len(self.d1))
         print('Guess  :', len(self.dt))
         print('Prevalence: {}%'.format(100.*len(self.d1)/len(self.d0)))
         print('Zeros bias? ', self.zeros_bias)
+        print('Set mean/std: {:4.4} {:4.4}'.format(np.mean(self.X), np.std(self.X)))
+        print('d0  mean/std: {:4.4} {:4.4}'.format(np.mean(self.d0), np.std(self.d0)))
+        print('d1  mean/std: {:4.4} {:4.4}'.format(np.mean(self.d1), np.std(self.d1)))
+
 
     def gimme(self):
         jcut = len(self.d0) // self.nFolds
