@@ -67,7 +67,7 @@ def separate_sets(data_vec, label_ary):
     # df = pd.DataFrame(data_vec)
     # df['label'] = pd.Series(label_ary)
     """This part currently breaks on 3D arrays"""
-    if label_ary.ndim >= 1:
+    if label_ary.ndim >= 2:
         if label_ary.shape[1] >= 1:
             label_ary = label_ary[:,0]
     d0 = data_vec[np.where(label_ary.ravel() == 0)[0], :]
@@ -277,3 +277,64 @@ class NormOMatic(object):
         else:
             raise ValueError("Invalid mode specifier: {}".format(self._disperseMode))
 
+
+class UnbalancedStratifier(object):
+    def __init__(self, X=None, Y=None, nFolds=2, preshuffle=True, random_state=None):
+        self.nFolds = nFolds
+        self.random_state = random_state
+        if X is not None and Y is not None:
+            self.feed(X, Y, preshuffle=preshuffle)
+
+    def feed(self, X, Y, preshuffle=True):
+        self.d0, self.d1, self.dt = separate_sets(X, Y)
+        self.zeros_bias = len(self.d1) < len(self.d0)
+        assert self.zeros_bias, "Fix this for extensibility later!!!"
+        if preshuffle:
+            np.random.seed(self.random_state)
+            np.random.shuffle(self.d0)
+            np.random.shuffle(self.d1)
+
+    def summary(self):
+        print('Total Samples:', len(self.d0) + len(self.d1) + len(self.dt))
+        print('Class 0:', len(self.d0))
+        print('Class 1:', len(self.d1))
+        print('Guess  :', len(self.dt))
+        print('Prevalence: {}%'.format(100.*len(self.d1)/len(self.d0)))
+        print('Zeros bias? ', self.zeros_bias)
+
+    def gimme(self):
+        jcut = len(self.d0) // self.nFolds
+        kcut = len(self.d1) // self.nFolds
+        for i in range(self.nFolds):
+            pre = slice(0, i*kcut)
+            mid = slice(i*kcut, (i+1)*kcut)
+            post = slice((i+1)*kcut, len(self.d1))
+            val_d1 = self.d1[mid]
+            train_d1 = np.concatenate([self.d1[pre], self.d1[post]])
+            valSetSize = len(val_d1)
+            trainSetSize = len(train_d1)
+            # pre_0 = slice(i*jcut, i*jcut + valSetSize)
+            start = self.nFolds * valSetSize
+            mid_0 = slice(i*valSetSize, (i+1) * valSetSize)
+            post_0 = slice(start + i * trainSetSize, start + (i+1) * trainSetSize)
+            val_d0 = self.d0[mid_0]
+            train_d0 = self.d0[post_0]
+            if len(train_d1) == len(train_d0) and len(val_d1) == len(val_d0):
+
+                train = np.concatenate([train_d0, train_d1], axis=0)
+                val = np.concatenate([val_d0, val_d1], axis=0)
+                y_train = np.concatenate([np.zeros(len(train_d0)), np.ones(len(train_d1))], axis=0)
+                y_val = np.concatenate([np.zeros(len(val_d0)), np.ones(len(val_d1))], axis=0)
+
+                np.random.seed(self.random_state)
+                np.random.shuffle(train)
+                np.random.shuffle(val)
+                np.random.seed(self.random_state)
+                np.random.shuffle(y_train)
+                np.random.shuffle(y_val)
+                # yield (len(train_d1) , len(train_d0) , len(val_d1) , len(val_d0))
+                yield ((train, y_train), (val, y_val))
+            else:
+                yield None
+
+        return
