@@ -93,24 +93,24 @@ def preprocess_wtf(data_train, data_test, Y, start=0, subdiv=64, renorm=True, ra
     G = simple_dtest
     return X, Y_new, G
 
-def ensemble_classifier(X, Y, G, start=0, subdiv=64, validation_split=0.20, random_state=None, renorm=True, verbose=0):
+def sketchy_balancer(X, Y, cut=256, sl=1, kf=2, validation_split=0.2, assertion_cutoff = 0.2):
+    val_idx = int((1 - validation_split) * len(X))
+    X1, Y1 = X[:val_idx:kf, :cut:sl], Y[:val_idx:kf]
+    X2, Y2 = X[val_idx::kf, :cut:sl], Y[val_idx::kf]
+    # G0 = G[:, :cut:sl]
+    balance_y1, balance_y2 = np.mean(Y1, axis=0), np.mean(Y2, axis=0)
+    assert 0.5 - assertion_cutoff < balance_y1 < 0.5 + assertion_cutoff, "Labels are unbalanced"
+    assert 0.5 - assertion_cutoff < balance_y2 < 0.5 + assertion_cutoff, "Labels are unbalanced"
+    return X1, Y1, X2, Y2
+
+def ensemble_classifier(X, Y, start=0, subdiv=64, validation_split=0.20, random_state=None, renorm=True, verbose=0):
 # def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
 #     X, Y, G = preprocess_wtf(data_train, data_test, Y, start=start, subdiv=subdiv, random_state=random_state, verbose=verbose)
-    assertion_cutoff = 0.2
     perc = lm.Perceptron()
 
-    cut = 256
-    sl = 1
-    kf = 2
-    val_idx = int((1-validation_split) * len(X))
-    X1, Y1 = X[:val_idx:kf,:cut:sl], Y[:val_idx:kf]
-    X2, Y2 = X[val_idx::kf,:cut:sl], Y[val_idx::kf]
-    G0 = G[:, :cut:sl]
-    balance_y1, balance_y2 = np.mean(Y1, axis=0), np.mean(Y2, axis=0)
-    assert 0.5-assertion_cutoff < balance_y1 < 0.5+assertion_cutoff, "Labels are unbalanced"
-    assert 0.5-assertion_cutoff < balance_y2 < 0.5+assertion_cutoff, "Labels are unbalanced"
+    X1, Y1, X2, Y2 = sketchy_balancer(X, Y)
 
-    if verbose >= 2: print(X1.shape, Y1.shape, G0.shape, )
+    if verbose >= 2: print(X1.shape, Y1.shape, )
     if verbose >= 2: print(np.mean(X,), np.mean(X), np.std(X, ), np.std(X, ), )
     if verbose >= 2: print(np.mean(X1,), np.mean(X2), np.std(X1, ), np.std(X2, ), )
 
@@ -181,7 +181,7 @@ def ensembleOMatic(verbose=1):
         X, Y2, G = preprocess_wtf(data_train, data_test, Y, start=i, subdiv=K, random_state=None, verbose=verbose)
 
         # try:
-        classer = ensemble_classifier(X, Y2, G, start=i, subdiv=K, verbose=verbose)
+        classer = ensemble_classifier(X, Y2, start=i, subdiv=K, verbose=verbose)
         # except AssertionError:
         #     classer = ensemble_classifier(X, Y2, G, start=i, subdiv=K, verbose=verbose)
         pr_all = classer.predict(X_val)
