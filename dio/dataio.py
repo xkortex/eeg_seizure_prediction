@@ -254,28 +254,47 @@ def respool_electrodes(data, nchan=16):
     return np.asarray(newdata).reshape(ndata // nchan, -1)
 
 class NormOMatic(object):
-    def __init__(self, centerMode='mean', disperseMode='std', mu=0.0, sigma=1.0, verbose=1):
+    def __init__(self, centerMode='mean', disperseMode='std', mu=0.0, sigma=1.0, normGlobal=False, verbose=1):
         self._mu = 0  # center point
         self._sigma = 1# stdDev/ dispersion
         self._centerMode = centerMode
         self._disperseMode = disperseMode
+        self._normGlobal = normGlobal
 
     def fit(self, X, Y=None):
+        ax = None if self._normGlobal else 0
+
         if self._centerMode == 'mean':
-            self._mu = np.mean(X, axis=0)
+            mu_fn = np.mean
         elif self._centerMode[:3] == 'med':
-            self._mu = np.median(X, axis=0)
+            mu_fn = np.median
         else:
             raise ValueError("Invalid mode specifier: {}".format(self._centerMode))
+        self._mu = mu_fn(X, axis=ax)
 
         if self._disperseMode[:3] == 'std':
-            self._sigma = np.std(X, axis=0)
+            sigma_fn = np.std
         elif self._disperseMode[:3] == 'var':
-            self._sigma = np.var(X, axis=0)
+            sigma_fn = np.var
         elif self._disperseMode[:3] == 'mad':
-            self._sigma = np.mean(np.abs(X - np.mean(X, 0)), 0)
+            sigma_fn = NormOMatic.mad
         else:
             raise ValueError("Invalid mode specifier: {}".format(self._disperseMode))
+        self._sigma = sigma_fn(X, axis=ax)
+
+    def transform(self, X, Y=None):
+        return (X - self.mu) / self.sigma
+
+    @property
+    def mu(self): return self._mu
+
+    @property
+    def sigma(self):
+        return self._sigma
+
+    @staticmethod
+    def mad(a, axis=None, dtype=None, out=None, keepdims=False):
+        return np.mean(np.abs(a - np.mean(a, axis=axis)), axis=axis)
 
 
 class UnbalancedStratifier(object):
