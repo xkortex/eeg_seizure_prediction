@@ -97,51 +97,33 @@ def sketchy_balancer(X, Y, cut=256, sl=1, kf=2, validation_split=0.2, assertion_
     val_idx = int((1 - validation_split) * len(X))
     X1, Y1 = X[:val_idx:kf, :cut:sl], Y[:val_idx:kf]
     X2, Y2 = X[val_idx::kf, :cut:sl], Y[val_idx::kf]
-    # G0 = G[:, :cut:sl]
     balance_y1, balance_y2 = np.mean(Y1, axis=0), np.mean(Y2, axis=0)
     assert 0.5 - assertion_cutoff < balance_y1 < 0.5 + assertion_cutoff, "Labels are unbalanced"
     assert 0.5 - assertion_cutoff < balance_y2 < 0.5 + assertion_cutoff, "Labels are unbalanced"
     return X1, Y1, X2, Y2
 
 def ensemble_classifier(X, Y, start=0, subdiv=64, validation_split=0.20, random_state=None, renorm=True, verbose=0):
-# def ensemble_classifier(data_train, data_test, Y, start=0, subdiv=64, random_state=None, renorm=True, verbose=0):
-#     X, Y, G = preprocess_wtf(data_train, data_test, Y, start=start, subdiv=subdiv, random_state=random_state, verbose=verbose)
-    perc = lm.Perceptron()
+
 
     X1, Y1, X2, Y2 = sketchy_balancer(X, Y)
-
     if verbose >= 2: print(X1.shape, Y1.shape, )
     if verbose >= 2: print(np.mean(X,), np.mean(X), np.std(X, ), np.std(X, ), )
     if verbose >= 2: print(np.mean(X1,), np.mean(X2), np.std(X1, ), np.std(X2, ), )
 
+    perc = lm.Perceptron()
     perc.fit(X1, Y1)
-
-
-    # In[354]:
-
-    if verbose >= 2: print('Score on total set', perc.score(X[:,:cut:sl], Y), np.mean(Y, axis=0))
-
-
-    # In[355]:
 
     if verbose >= 2: print( perc.score(X1, Y1), np.mean(Y, axis=0))
     if verbose >= 2: print( perc.score(X2, Y2), np.mean(Y, axis=0))
 
-
     pr = perc.predict(X2)
     if verbose >= 2: print('Expected: 0.5:',pr.mean())
 
-    # # VALIDATION
     if verbose >= 1: print('VALIDATION {:2}: {:.2f} %'.format(start, 100*np.mean(pr == Y2)))
     return perc
 
 
-def ensembleOMatic(verbose=1):
-    K = 64 # subdiv of FFT
-
-    # Data loading section
-
-    # In[223]:
+def ensembleOMatic(verbose=1, K=64):
 
     basedir = '/home/mike/data/vectors/'
     data_train = np.load(basedir + 'vec_1478816228.31.npy')
@@ -150,18 +132,12 @@ def ensembleOMatic(verbose=1):
     names_test = pd.read_csv(basedir + 'vec_1478825795.45_name.csv')
     if verbose >=2: print(data_train.shape, data_test.shape)
 
-    # In[224]:
-
     data_train = np.nan_to_num(data_train)
     data_test = np.nan_to_num(data_test)
-
-    # In[225]:
 
     names_train['label'] = [int(name[-5]) for name in names_train['path']]
     if verbose >= 2: print(names_train.shape, names_train['label'].mean())
     names_train.head()
-
-    # In[226]:
 
     name_mask = names_train['label'] == 0
     Y = np.vstack([name_mask, ~name_mask]).T  # hack to regenerate Y
