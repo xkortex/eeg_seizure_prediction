@@ -55,7 +55,14 @@ def load_label_ary(basename):
             label_ary.append(int(lab[-1]))
     return np.array(label_ary).reshape(-1, 1)
 
-
+def selectif(a, y, val=None):
+    if y.ndim != 1:
+        raise ValueError('Reference axis must be 1-D. Please ravel first')
+    assert len(a) == len(y), 'Input data and y must be same length along 0 axis'
+    indexer = np.where(y == val)[0]
+    if len(indexer) == 0:
+        print("Warning [dataio.selectif()], no items found with label: {}".format(val))
+    return a[indexer]
 
 def separate_sets(data_vec, label_ary):
     """
@@ -70,9 +77,11 @@ def separate_sets(data_vec, label_ary):
     if label_ary.ndim >= 2:
         if label_ary.shape[1] >= 1:
             label_ary = label_ary[:,0]
-    d0 = data_vec[np.where(label_ary.ravel() == 0)[0], :]
-    d1 = data_vec[np.where(label_ary.ravel() == 1)[0], :]
-    dt = data_vec[np.where(label_ary.ravel() == -1)[0], :]
+    label_ary = label_ary.ravel()
+    d0 = selectif(data_vec, label_ary, 0)
+    d1 = selectif(data_vec, label_ary, 1)
+    dt = selectif(data_vec, label_ary, -1)
+    print('wtf', len(d0), len(d1))
 
     return (d0, d1, dt)
 
@@ -95,7 +104,24 @@ def dump_data(vec_ary, name_ary, meta, filename, basedir, catchIOError=True):
         dump(name_ary, meta, filename, basedir)
 
 
-def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True, shuffle=True):
+def subdiv2(data, labels, resample='down', noise=None, merge=True, shuffle=True):
+    d0, d1, dt = separate_sets(data, labels)
+    if resample == 'down':
+        np.random.shuffle(d0)
+        d0 = d0[:len(d1)]
+    elif resample == 'up':
+        ratio = len(d0) / len(d1)
+        mult = int(ratio) + 1
+        d1 = np.concatenate([d1, ] * mult, axis=0)
+    else:
+        raise ValueError("Invalid resample argument: {}".format(resample))
+
+
+    raise NotImplementedError('not ready')
+    return X, Y
+
+
+def subdiv_and_shuffle(data, labels, resample='down', noise=None, merge=True, shuffle=True, validation_split=None):
     d0, d1, dt = separate_sets(data, labels)
     if resample == 'down':
         np.random.shuffle(d0)
