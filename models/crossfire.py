@@ -3,7 +3,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 from keras.layers import Input, Dense, Lambda, Flatten, Reshape, BatchNormalization, Dropout, GaussianNoise
-from keras.layers import Convolution2D, Deconvolution2D, MaxPooling2D, UpSampling2D
+from keras.layers import Convolution2D, Deconvolution2D, MaxPooling2D, UpSampling2D, Deconv2D
 from keras.models import Model
 from keras import regularizers
 from keras import backend as K_backend
